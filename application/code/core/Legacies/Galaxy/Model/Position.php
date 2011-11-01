@@ -148,5 +148,13 @@ class Legacies_Galaxy_Model_Position extends Wootook_Core_Entity_SubTable {
 	public function setPosition($position) {
 		$this->_position = $position;
 	}
+	
+	public function getDebrisAmount($resourceType) {
+		
+	}
+	
+	public function setDebrisAmount($resourceType, $amount) {
+		
+	}
 
 }
