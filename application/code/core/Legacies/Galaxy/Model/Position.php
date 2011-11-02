@@ -46,7 +46,7 @@ class Legacies_Galaxy_Model_Position extends Wootook_Core_Entity_SubTable {
 		}
 		return self::$_instances[$key];
 	}
-
+	
 	/**
 	 *
 	 * retourne l'objet présent aux coordonnées données
@@ -255,7 +255,7 @@ class Legacies_Galaxy_Model_Position extends Wootook_Core_Entity_SubTable {
 			return null;
 		}
 		
-		return (int) $this->getData($resourceConfig['field']);
+		return (int) ($this->getData($resourceConfig['field']));
 	}
 
 	/**
