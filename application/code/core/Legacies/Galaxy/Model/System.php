@@ -41,9 +41,9 @@ class Legacies_Galaxy_Model_System extends Wootook_Core_Collection {
 			throw new Wootook_Core_Exception_RuntimeException('Undefine galaxy or system');
 		}
 
-		$coord = array('galaxy' => $galaxy, 'system' => $system);
+		$coords = array('galaxy' => $galaxy, 'system' => $system);
 
-		$this->load($coord);
+		$this->load($coords);
 	}
 
 }
