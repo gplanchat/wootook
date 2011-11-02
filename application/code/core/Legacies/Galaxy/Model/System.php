@@ -7,6 +7,7 @@ class Legacies_Galaxy_Model_System extends Wootook_Core_Collection {
 	
 	public function __construct() {
 		parent::__construct('galaxy', 'Legacies_Galaxy_Model_Position');
+		$this->where('galaxy=:galaxy')->where('system=:system');
 	}
 	
 	protected function _init() {
