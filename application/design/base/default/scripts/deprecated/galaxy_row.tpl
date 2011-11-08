@@ -1,6 +1,6 @@
 
 	<tr>
-	  <th width="30"><a href="#"<?php echo $this->getData('tab')?><?php echo $this->getData('i')?></a></th>
+	  <th width="30"><a href="#"<?php echo $this->getData('tab')?>><?php echo $this->getData('i')?></a></th>
 	  <th width="30"><?php echo $this->getData('row_planet')?></th>
 	  <th style="white-space: nowrap;" width="130"><?php echo $this->getData('planet_name')?></th>
 	  <th style="white-space: nowrap;" width="30">{luna_name)</th>
