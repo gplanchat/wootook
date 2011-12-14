@@ -2,16 +2,6 @@
     'install' => array(
         'update' => '2columns-left',
         'reference' => array(
-            'messages' => array(
-                'actions' => array(
-                    array(
-                        'method' => 'prepareMessages',
-                        'params' => array(
-                            'namespace' => 'install'
-                            )
-                        )
-                    )
-                ),
             'content' => array(
                 'children' => array(
                     'navigation' => array(
@@ -80,5 +70,94 @@
                     )
                 )
             )
-        )
+        ),
+
+    'install.step.database' => array(
+        'update' => 'install',
+        'reference' => array(
+            'content' => array(
+                'children' => array(
+                    'overview' => array(
+                        'type' => 'core/template',
+                        'template' => 'step/database.phtml'
+                        ),
+                    )
+                ),
+            'status' => array(
+                'actions' => array(
+                    array(
+                        'method' => 'setData',
+                        'params' => array(
+                            'key'   => 'step',
+                            'value' => 'database'
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+
+    'install.step.universe' => array(
+        'update' => 'install',
+        'reference' => array(
+            'content' => array(
+                'children' => array(
+                    'overview' => array(
+                        'type' => 'core/template',
+                        'template' => 'step/universe.phtml'
+                        ),
+                    )
+                ),
+            'status' => array(
+                'actions' => array(
+                    array(
+                        'method' => 'setData',
+                        'params' => array(
+                            'key'   => 'step',
+                            'value' => 'universe'
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+
+    'install.step.profile' => array(
+        'update' => 'install',
+        'reference' => array(
+            'content' => array(
+                'children' => array(
+                    'overview' => array(
+                        'type' => 'core/template',
+                        'template' => 'step/profile.phtml'
+                        ),
+                    )
+                ),
+            'status' => array(
+                'actions' => array(
+                    array(
+                        'method' => 'setData',
+                        'params' => array(
+                            'key'   => 'step',
+                            'value' => 'profile'
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+
+    'install.summary' => array(
+        'update' => 'install',
+        'reference' => array(
+            'content' => array(
+                'children' => array(
+                    'overview' => array(
+                        'type' => 'core/template',
+                        'template' => 'summary.phtml'
+                        ),
+                    )
+                )
+            )
+        ),
     );

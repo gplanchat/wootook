@@ -34,19 +34,23 @@ define('IN_INSTALL', true);
 
 define('STEP_SYSTEM',   1);
 define('STEP_DATABASE', 2);
-define('STEP_PROFILE',  3);
-define('STEP_UNIVERSE', 4);
+define('STEP_UNIVERSE', 3);
+define('STEP_PROFILE',  4);
 define('STEP_CONFIG',   5);
 
-require_once dirname(dirname(__FILE__)) .'/application/bootstrap.php';
-
-//include(ROOT_PATH . 'includes/databaseinfos.php');
-//include(ROOT_PATH . 'includes/migrateinfo.php');
+require_once dirname(dirname(__FILE__)) . '/application/bootstrap.php';
 
 $mode     = isset($_GET['mode']) ? strval($_GET['mode']) : 'intro';
 $step     = isset($_GET['step']) ? intval($_GET['step']) : 1;
 $prevStep = $step - 1;
 $nextStep = $step + 1;
+
+$modules = array(
+    'Wootook_Core',
+    'Wootook_Empire',
+    'Legacies_Empire',
+    'Legacies_Officers'
+    );
 
 includeLang('install/install');
 
@@ -59,6 +63,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
         $baseUrl .= dirname(dirname($_SERVER['REQUEST_URI'])) . '/';
     }
 }
+
 Wootook::setConfig('global/web/base_url', $baseUrl);
 
 Wootook::setConfig('global/package', 'install');
@@ -76,12 +81,12 @@ $response = new Wootook_Core_Controller_Response_Http();
 switch ($mode) {
 case 'intro':
     $layout->load('install.intro');
+    $layout->getMessagesBlock()->prepareMessages('install');
     $session->setData('step', 1);
     break;
 
 case 'install':
-    $session->addError('Test %s', 'Hello world!');
-    if ($step != $session->getData('step')) {
+    if ($step > $session->getData('step')) {
         $session->setData('step', 0);
         $response->setRedirect("?mode=intro", Wootook_Core_Controller_Response_Http::REDIRECT_TEMPORARY);
         $response->sendHeaders();
@@ -92,34 +97,70 @@ case 'install':
     case STEP_SYSTEM:
         if ($request->isPost()) {
             $form = new Wootook_Core_Form($session, array(
-                'url_path' => 'text'
+                'url_path'      => 'text',
+                'timezone'      => 'text'
                 ));
-            $form->addField('url_path');
             $form->setRequest($request);
             $form->populate();
 
             if (!$form->validate()) {
-                $session->setData('step', $step);
+                $session->setData('step', STEP_SYSTEM);
                 $session->setFormData($form->getData());
-                var_dump($session);
-                $response->setRedirect("?mode=install&step={$step}");
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_SYSTEM)));
                 $response->sendHeaders();
                 exit(0);
             }
 
-            $layout->getMessagesblock()->prepareMessages('install');
-            $session->setBaseUrl($request->getPost('url_path'));
+            $config = array(
+                'global' => array(
+                    'storyline' => array(
+                        'universe' => 'legacies',
+                        'episode'  => 'default',
+                        ),
+                    'web' => array(
+                        'base_url' => $request->getPost('url_path')
+                        ),
+                    'date' => array(
+                        'timezone' => $request->getPost('timezone')
+                        ),
+                    'layout' => array(
+                        'page'   => 'page.php',
+                        'admin'  => 'admin.php',
+                        'empire' => 'empire.php'
+                        ),
+                    'locales' => array(
+                        'fr'    => 'fr_FR',
+                        'fr_FR' => 'fr_FR',
+                        'en'    => 'en_US',
+                        'en_US' => 'en_US'
+                        )
+                    ),
+                );
+            $session->setData('config', serialize($config));
 
-            $session->setStep(STEP_DATABASE);
-            $response->setRedirect("?mode=install&step={$nextStep}");
+            $session->setData('step', STEP_DATABASE);
+            $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_DATABASE)));
             $response->sendHeaders();
             exit(0);
         }
 
         $layout->load('install.step.system');
+        $layout->getMessagesBlock()->prepareMessages('install');
         break;
 
     case STEP_DATABASE:
+        $config = unserialize($session->getData('config'));
+        if (isset($config['global']['database'])) {
+            $session->setFormData(array(
+                'host'     => $config['global']['database']['default']['params']['hostname'],
+                'port'     => $config['global']['database']['default']['params']['port'],
+                'user'     => $config['global']['database']['default']['params']['username'],
+                'password' => $config['global']['database']['default']['params']['password'],
+                'dbname'   => $config['global']['database']['default']['params']['database'],
+                'prefix'   => $config['global']['database']['default']['table_prefix'],
+                ));
+        }
+
         if ($request->isPost()) {
             $form = new Wootook_Core_Form($session, array(
                 'host'     => 'text',
@@ -133,330 +174,275 @@ case 'install':
             $form->populate();
 
             if (!$form->validate()) {
-                $session->setData('step', $step);
-                $session->setFormData($request->getPost());
-                $response->setRedirect("?mode=install&step={$step}");
+                $session->setData('step', STEP_DATABASE);
+                $session->setFormData($request->getData());
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_DATABASE)));
                 $response->sendHeaders();
                 exit(0);
             }
 
-            $layout->getMessagesblock()->prepareMessages('install');
-            $session->setStep(STEP_PROFILE);
-            $response->setRedirect("?mode=install&step={$nextStep}");
+            if ($request->getPost('test')) {
+                $data = array(
+                    'status'  => 'pending',
+                    'message' => ''
+                    );
+
+                try {
+                    $hostname = $request->getPost('host');
+                    $username = $request->getPost('user');
+                    $password = $request->getPost('password');
+                    $database = $request->getPost('dbname');
+                    $port = $request->getPost('port');
+
+                    $connection = new Wootook_Database("mysql:dbname={$database};host={$hostname};port={$port}", $username, $password);
+                    $data['status'] = 'success';
+                } catch (PDOException $e) {
+                    $data['status'] = 'error';
+                    $data['message'] = $e->getMessage();
+                }
+
+                Wootook_Core_ErrorProfiler::unregister(true);
+                $response->setHeader('Content-Type', 'application/json');
+                $response->setBody(json_encode($data));
+
+                $response->sendHeaders();
+                echo $response->sendBody();
+                exit(0);
+            }
+
+            $config = unserialize($session->getData('config'));
+            $config['global']['database'] = array(
+                'default' => array(
+                    'engine' => 'mysql',
+                    'options' => array(
+                        ),
+                    'params' => array(
+                        'hostname' => $request->getPost('host'),
+                        'username' => $request->getPost('user'),
+                        'password' => $request->getPost('password'),
+                        'database' => $request->getPost('dbname'),
+                        'port'     => $request->getPost('port')
+                        ),
+                    'table_prefix' => $request->getPost('prefix'),
+                    ),
+                'core_setup' => array(
+                    'use' => 'default'
+                    ),
+                'core_read' => array(
+                    'use' => 'default'
+                    ),
+                'core_write' => array(
+                    'use' => 'default'
+                    ),
+                );
+            $session->setData('config', serialize($config));
+
+            $session->setData('step', STEP_UNIVERSE);
+            $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
             $response->sendHeaders();
             exit(0);
         }
 
-        $layout->load('install.database');
-        break;
-
-    case STEP_PROFILE:
-        if (empty($_POST)) {
-            $session->setData('step', $step);
-            $response->setRedirect("?mode=install&step={$nextStep}");
-            $response->sendHeaders();
-            exit(0);
-        }
-
-        $layout->load('install.profile');
+        $layout->load('install.step.database');
+        $layout->getMessagesBlock()->prepareMessages('install');
         break;
 
     case STEP_UNIVERSE:
-        if (empty($_POST)) {
-            $session->setData('step', $step);
-            $response->setRedirect("?mode=install&step={$nextStep}");
+        if ($request->isPost()) {
+            $form = new Wootook_Core_Form($session, array(
+                'galaxies'  => 'text',
+                'systems'   => 'text',
+                'positions' => 'text',
+
+                'allow_spy_drone_attacks' => 'text',
+                'use_large_numbers'       => 'text'
+                ));
+            $form->setRequest($request);
+            $form->populate();
+
+            if (!$form->validate()) {
+                $session->setData('step', STEP_UNIVERSE);
+                $session->setFormData($request->getData());
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
+                $response->sendHeaders();
+                exit(0);
+            }
+
+            $config = unserialize($session->getData('config'));
+            $config['default'] = array(
+                'engine' => array(
+                    'core' => array(
+                        'use_large_numbers' => (bool) $request->getPost('use_large_numbers')
+                        ),
+                    'universe' => array(
+                        'galaxies'  => $request->getPost('galaxies'),
+                        'systems'   => $request->getPost('systems'),
+                        'positions' => $request->getPost('positions')
+                        ),
+                    'combat' => array(
+                        'allow_spy_drone_attacks' => (bool) $request->getPost('allow_spy_drone_attacks')
+                        )
+                    ),
+                );
+            Wootook::writeConfig($config);
+
+            $gameplays = include dirname(__FILE__) . DIRECTORY_SEPARATOR . 'gameplays.php';
+            $gameplayKey = $config['global']['storyline']['universe'];
+            if (!isset($gameplays[$gameplayKey])) {
+                $gameplayKey = key($gameplays);
+            }
+            $moduleList = $gameplays[$gameplayKey]['modules'];
+
+            $installedModules = array();
+            $updater = new Wootook_Core_Setup_Updater();
+            foreach ($moduleList as $module => $moduleData) {
+                $version = $moduleData['version'];
+                $codePool = $moduleData['code_pool'];
+                $modulePath = str_replace('_', DIRECTORY_SEPARATOR, $module);
+
+                $scriptPath = APPLICATION_PATH . 'code' . DIRECTORY_SEPARATOR . $codePool
+                    . DIRECTORY_SEPARATOR . $modulePath . DIRECTORY_SEPARATOR . 'install'
+                    . DIRECTORY_SEPARATOR . 'mysql5';
+
+                try {
+                    $queue = new Wootook_Core_Setup_Updater_ScriptQueue($scriptPath, null, $version);
+
+                    foreach ($queue as $installScript) {
+                        $updater->run($installScript['script']);
+                        $installedModules[$module] = $installScript['version']['version'];
+                    }
+                } catch (Wootook_Core_Setup_Exception_VersionStageError $e) {
+                    Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
+
+                    $session->addError($e->getMessage());
+                    $session->setData('step', STEP_UNIVERSE);
+                    $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
+                    $response->sendHeaders();
+                    continue;
+                } catch (Wootook_Core_Setup_Exception_VersionValueError $e) {
+                    Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
+
+                    $session->addError($e->getMessage());
+                    $session->setData('step', STEP_UNIVERSE);
+                    $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
+                    $response->sendHeaders();
+                    continue;
+                } catch (Wootook_Core_Setup_Exception_RuntimeException $e) {
+                    Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
+
+                    $session->addError($e->getMessage());
+                    $session->setData('step', STEP_UNIVERSE);
+                    $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
+                    $response->sendHeaders();
+                    continue;
+                }
+            }
+            $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . 'gamedata'  . DIRECTORY_SEPARATOR
+                . $gameplayKey . DIRECTORY_SEPARATOR . 'version.php';
+            file_put_contents($path, '<' . '?p' . 'hp ' . var_export($installedModules, true) . ';');
+
+            $session->addSuccess(Wootook::__('Game data successfully initialized.'));
+            $session->setData('step', STEP_PROFILE);
+            $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
             $response->sendHeaders();
             exit(0);
         }
 
-        $layout->load('install.universe');
+        $layout->load('install.step.universe');
+        $layout->getMessagesBlock()->prepareMessages('install');
+        break;
+
+    case STEP_PROFILE:
+        if ($request->isPost()) {
+            $form = new Wootook_Core_Form($session, array(
+                'username'         => 'text',
+                'email'            => 'text',
+                'email_confirm'    => 'text',
+                'password'         => 'text',
+                'password_confirm' => 'text',
+                ));
+            $form->setRequest($request);
+            $form->populate();
+
+            if (!$form->validate()) {
+                $session->setData('step', STEP_PROFILE);
+                $session->setFormData($request->getData());
+                $session->addError(Wootook::__('Form data error.'));
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
+                $response->sendHeaders();
+                exit(0);
+            }
+
+            if ($request->getPost('password') != $request->getPost('password_confirm')) {
+                $session->setData('step', STEP_PROFILE);
+                $session->setFormData($request->getData());
+                $session->addError(Wootook::__('Passwords does not match.'));
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
+                $response->sendHeaders();
+                exit(0);
+            }
+
+            if ($request->getPost('email') != $request->getPost('email_confirm')) {
+                $session->setData('step', STEP_PROFILE);
+                $session->setFormData($request->getData());
+                $session->addError(Wootook::__('Both e-mails does not match.'));
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
+                $response->sendHeaders();
+                exit(0);
+            }
+
+            try {
+                $user = Wootook_Empire_Model_User::register($request->getPost('username'), $request->getPost('email'), $request->getPost('password'));
+            } catch (Wootook_Empire_Exception_RuntimeException $e) {
+            }
+            $layout->getMessagesBlock()->prepareMessages('user');
+            if (!$user->getId()) {
+                $session->setData('step', STEP_PROFILE);
+                $session->setFormData($request->getData());
+                $session->addError(Wootook::__('Could not create user.'));
+                $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_PROFILE)));
+                $response->sendHeaders();
+                exit(0);
+            } else {
+                Wootook_Empire_Model_User::setLoggedIn($user);
+
+                $user->setData('authlevel', LEVEL_ADMIN)->save();
+            }
+
+            $session->setData('step', STEP_CONFIG);
+            //$response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_CONFIG)));
+            $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'summary')));
+            $response->sendHeaders();
+            exit(0);
+        }
+
+        $layout->load('install.step.profile');
+        $layout->getMessagesBlock()->prepareMessages('install');
         break;
 
     case STEP_CONFIG:
-        if (empty($_POST)) {
+        //*
+        $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'summary')));
+        $response->sendHeaders();
+        exit(0);
+        /*/
+        if ($request->isPost()) {
             $session->setData('step', $step);
             $response->setRedirect("?mode=install&step={$nextStep}");
             $response->sendHeaders();
             exit(0);
         }
 
-        $layout->load('install.config');
+        $layout->getMessagesBlock()->prepareMessages('install');
+        $layout->load('install.step.config');
+        //*/
         break;
     }
     break;
-
-    case 'ins':
-        if ($page == 1) {
-            if (isset($_GET['error']) && intval($_GET['error']) == 1) {
-	            adminMessage ($lang['ins_error1'], $lang['ins_error']);
-            }
-            elseif (isset($_GET['error']) && intval($_GET['error']) == 2) {
-	            adminMessage ($lang['ins_error2'], $lang['ins_error']);
-            }
-
-            $subTpl = gettemplate('install/ins_form');
-            $bloc   = $lang;
-            $bloc['dpath'] = $dpath;
-            $frame  = parsetemplate($subTpl, $bloc);
-        } else if ($page == 2) {
-            $host   = $_POST['host'];
-            $user   = $_POST['user'];
-            $pass   = $_POST['passwort'];
-            $prefix = $_POST['prefix'];
-            $db     = $_POST['db'];
-
-            $connection = @mysql_connect($host, $user, $pass);
-            if (!$connection) {
-                header("Location: ?mode=ins&page=1&error=1");
-                exit();
-            }
-
-            $dbselect = @mysql_select_db($db);
-            if (!$dbselect) {
-                header("Location: ?mode=ins&page=1&error=1");
-                exit();
-            }
-
-            $dz = fopen("../config.php", "w");
-            if (!$dz) {
-	            header("Location: ?mode=ins&page=1&error=2");
-	            exit();
-            }
-            $fileData =<<<EOF
-<?php return array(
-    'global' => array(
-        'database' => array(
-            'engine' => 'mysql',
-            'options' => array(
-                'hostname' => '{$host}',
-                'username' => '{$user}',
-                'password' => '{$pass}',
-                'database' => '{$db}'
-                ),
-            'table_prefix' => '{$prefix}',
-            )
-        )
-    );
-EOF;
-            fwrite($dz, $fileData);
-            fclose($dz);
-
-            doquery ( $QryTableAks        , 'aks'        );
-            doquery ( $QryTableAnnonce    , 'annonce'    );
-            doquery ( $QryTableAlliance   , 'alliance'   );
-            doquery ( $QryTableBanned     , 'banned'     );
-            doquery ( $QryTableBuddy      , 'buddy'      );
-            doquery ( $QryTableChat       , 'chat'       );
-            doquery ( $QryTableConfig     , 'config'     );
-            doquery ( $QryInsertConfig    , 'config'     );
-            doquery ( $QryTabledeclared        , 'declared'        );
-            doquery ( $QryTableErrors     , 'errors'     );
-            doquery ( $QryTableFleets     , 'fleets'     );
-            doquery ( $QryTableGalaxy     , 'galaxy'     );
-            doquery ( $QryTableIraks      , 'iraks'      );
-            doquery ( $QryTableLunas      , 'lunas'      );
-            doquery ( $QryTableMessages   , 'messages'   );
-            doquery ( $QryTableNotes      , 'notes'      );
-            doquery ( $QryTablePlanets    , 'planets'    );
-            doquery ( $QryTableRw         , 'rw'         );
-            doquery ( $QryTableStatPoints , 'statpoints' );
-            doquery ( $QryTableUsers      , 'users'      );
-            doquery ( $QryTableMulti      , 'multi'      );
-
-            $subTpl = gettemplate ('install/ins_form_done');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate ( $subTpl, $bloc );
-        } elseif ($page == 3) {
-            if (isset($_GET['error']) && intval($_GET['error']) == 3) {
-            adminMessage($lang['ins_error3'], $lang['ins_error']);
-            }
-
-            $subTpl = gettemplate ('install/ins_acc');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate ( $subTpl, $bloc );
-        } elseif ($page == 4) {
-            $adm_user   = $_POST['adm_user'];
-            $adm_pass   = $_POST['adm_pass'];
-            $adm_email  = $_POST['adm_email'];
-            $adm_planet = $_POST['adm_planet'];
-            $adm_sex    = $_POST['adm_sex'];
-            $md5pass    = md5($adm_pass);
-
-            if (!isset($_POST['adm_user'])) {
-                header("Location: ?mode=ins&page=3&error=3");
-                exit();
-            }
-            if (!isset($_POST['adm_pass'])) {
-                header("Location: ?mode=ins&page=3&error=3");
-                exit();
-            }
-            if (!isset($_POST['adm_email'])) {
-                header("Location: ?mode=ins&page=3&error=3");
-                exit();
-            }
-            if (!isset($_POST['adm_planet'])) {
-                header("Location: ?mode=ins&page=3&error=3");
-                exit();
-            }
-
-            $config = include(ROOT_PATH . 'config.php');
-            $db_host   = $config['global']['database']['options']['hostname'];
-            $db_user   = $config['global']['database']['options']['username'];
-            $db_pass   = $config['global']['database']['options']['password'];
-            $db_db     = $config['global']['database']['options']['database'];
-            $db_prefix = $config['global']['database']['table_prefix'];
-
-            $connection = @mysql_connect($db_host, $db_user, $db_pass);
-                if (!$connection) {
-                header("Location: ?mode=ins&page=1&error=1");
-                exit();
-                }
-
-            $dbselect = @mysql_select_db($db_db);
-                if (!$dbselect) {
-                header("Location: ?mode=ins&page=1&error=1");
-                exit();
-                }
-
-            $QryInsertAdm  = "INSERT INTO {{table}} SET ";
-            $QryInsertAdm .= "`id`                = '1', ";
-            $QryInsertAdm .= "`username`          = '". $adm_user ."', ";
-            $QryInsertAdm .= "`email`             = '". $adm_email ."', ";
-            $QryInsertAdm .= "`email_2`           = '". $adm_email ."', ";
-            $QryInsertAdm .= "`authlevel`         = '3', ";
-            $QryInsertAdm .= "`sex`               = '". $adm_sex ."', ";
-            $QryInsertAdm .= "`id_planet`         = '1', ";
-            $QryInsertAdm .= "`galaxy`            = '1', ";
-            $QryInsertAdm .= "`system`            = '1', ";
-            $QryInsertAdm .= "`planet`            = '1', ";
-            $QryInsertAdm .= "`current_planet`    = '1', ";
-            $QryInsertAdm .= "`register_time`     = '". time() ."', ";
-            $QryInsertAdm .= "`password`          = '". $md5pass ."';";
-            doquery($QryInsertAdm, 'users');
-
-            $QryAddAdmPlt  = "INSERT INTO {{table}} SET ";
-            $QryAddAdmPlt .= "`name`              = '". $adm_planet ."', ";
-            $QryAddAdmPlt .= "`id_owner`          = '1', ";
-            $QryAddAdmPlt .= "`galaxy`            = '1', ";
-            $QryAddAdmPlt .= "`system`            = '1', ";
-            $QryAddAdmPlt .= "`planet`            = '1', ";
-            $QryAddAdmPlt .= "`last_update`       = '". time() ."', ";
-            $QryAddAdmPlt .= "`planet_type`       = '1', ";
-            $QryAddAdmPlt .= "`image`             = 'normaltempplanet02', ";
-            $QryAddAdmPlt .= "`diameter`          = '12750', ";
-            $QryAddAdmPlt .= "`field_max`         = '163', ";
-            $QryAddAdmPlt .= "`temp_min`          = '47', ";
-            $QryAddAdmPlt .= "`temp_max`          = '87', ";
-            $QryAddAdmPlt .= "`metal`             = '500', ";
-            $QryAddAdmPlt .= "`metal_perhour`     = '0', ";
-            $QryAddAdmPlt .= "`metal_max`         = '1000000', ";
-            $QryAddAdmPlt .= "`crystal`           = '500', ";
-            $QryAddAdmPlt .= "`crystal_perhour`   = '0', ";
-            $QryAddAdmPlt .= "`crystal_max`       = '1000000', ";
-            $QryAddAdmPlt .= "`deuterium`         = '500', ";
-            $QryAddAdmPlt .= "`deuterium_perhour` = '0', ";
-            $QryAddAdmPlt .= "`deuterium_max`     = '1000000';";
-            doquery($QryAddAdmPlt, 'planets');
-
-            $QryAddAdmGlx  = "INSERT INTO {{table}} SET ";
-            $QryAddAdmGlx .= "`galaxy`            = '1', ";
-            $QryAddAdmGlx .= "`system`            = '1', ";
-            $QryAddAdmGlx .= "`planet`            = '1', ";
-            $QryAddAdmGlx .= "`id_planet`         = '1'; ";
-            doquery($QryAddAdmGlx, 'galaxy');
-
-            doquery("UPDATE {{table}} SET `config_value` = '1' WHERE `config_name` = 'LastSettedGalaxyPos';", 'config');
-            doquery("UPDATE {{table}} SET `config_value` = '1' WHERE `config_name` = 'LastSettedSystemPos';", 'config');
-            doquery("UPDATE {{table}} SET `config_value` = '1' WHERE `config_name` = 'LastSettedPlanetPos';", 'config');
-            doquery("UPDATE {{table}} SET `config_value` = `config_value` + '1' WHERE `config_name` = 'users_amount' LIMIT 1;", 'config');
-
-            $subTpl = gettemplate ('install/ins_acc_done');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate ( $subTpl, $bloc );
-        }
-        break;
-
-    case 'goto':
-        if ($page == 1) {
-            $subTpl = gettemplate ('install/ins_goto_intro');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate ( $subTpl, $bloc );
-        } elseif ($page == 2) {
-            if ($_GET['error'] == 1) {
-            adminMessage ($lang['ins_error1'], $lang['ins_error']);
-            }
-            elseif ($_GET['error'] == 2) {
-            adminMessage ($lang['ins_error2'], $lang['ins_error']);
-            }
-
-            $subTpl = gettemplate ('install/ins_goto_form');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate ( $subTpl, $bloc );
-        } elseif ($page == 3) {
-            $host   = $_POST['host'];
-            $user   = $_POST['user'];
-            $pass   = $_POST['passwort'];
-            $prefix = $_POST['prefix'];
-            $db     = $_POST['db'];
-
-            if (!mysql_connect($host, $user, $pass)) {
-                header("Location: ?mode=goto&page=2&error=1");
-                exit();
-            }
-
-            if (!mysql_select_db($db)) {
-                header("Location: ?mode=goto&page=2&error=1");
-                exit();
-            }
-
-            $dz = fopen("../config.php", "w");
-            if (!$dz) {
-                header("Location: ?mode=ins&page=1&error=2");
-                exit();
-            }
-
-            $fileData =<<<EOF
-<?php return array(
-    'global' => array(
-        'database' => array(
-            'engine' => 'mysql',
-            'options' => array(
-                'hostname' => '{$host}',
-                'username' => '{$user}',
-                'password' => '{$pass}',
-                'database' => '{$db}'
-                ),
-            'table_prefix' => '{$prefix}',
-            )
-        )
-    );
-EOF;
-            fwrite($dz, $fileData);
-            fclose($dz);
-
-            foreach ($QryMigrate as $query) {
-                doquery($query, $prefix);
-            }
-
-            $subTpl = gettemplate('install/ins_goto_done');
-            $bloc   = $lang;
-            $bloc['dpath']        = $dpath;
-            $frame  = parsetemplate($subTpl, $bloc);
-         }
-         break;
-
-    case 'bye':
-            header("Location: ../");
-         break;
-
-    default:
-        header('Location: ?mode=intro');
-        die();
+case 'summary':
+    $layout->load('install.summary');
+    $layout->getMessagesBlock()->prepareMessages('install');
+    break;
 }
 
 echo $layout->render();

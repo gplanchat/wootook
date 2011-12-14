@@ -72,6 +72,8 @@ function __autoload($class) {
     include_once str_replace('_', '/', $class) . '.php';
 }
 
+include ROOT_PATH . 'includes/constants.php';
+
 Wootook_Core_Time::init();
 Wootook_Core_ErrorProfiler::register();
 Wootook_Core_Model_Config_Events::registerEvents();
@@ -89,7 +91,6 @@ define('DEFAULT_LANG', 'fr');
 include(ROOT_PATH . 'includes/debug.class.'.PHPEXT);
 $debug = new Debug();
 
-include(ROOT_PATH . 'includes/constants.' . PHPEXT);
 include(ROOT_PATH . 'includes/functions.' . PHPEXT);
 include(ROOT_PATH . 'includes/unlocalised.' . PHPEXT);
 include(ROOT_PATH . 'includes/todofleetcontrol.' . PHPEXT);
@@ -99,9 +100,9 @@ include(ROOT_PATH . 'includes/strings.' . PHPEXT);
 
 if (!defined('IN_INSTALL')) {
 
-    $gameConfig = Wootook_Core_Model_Config::getSingleton();
-    if (isset($gameConfig['cookie_name']) && !empty($gameConfig['cookie_name'])) {
-        Wootook_Empire_Model_User::setCookieName($gameConfig['cookie_name']);
+    $cookieName = Wootook::getGameConfig('web/cookie/name');
+    if ($cookieName !== null) {
+        Wootook_Empire_Model_User::setCookieName($cookieName);
     }
     $user = Wootook_Empire_Model_User::getSingleton();
 
@@ -111,8 +112,15 @@ if (!defined('IN_INSTALL')) {
             exit(0);
         }
 
-        if ($gameConfig->isEnabled() && $user !== null && !in_array($user->getData('authlevel'), array(LEVEL_ADMIN, LEVEL_MODERATOR, LEVEL_OPERATOR))) {
-            message(stripslashes($gameConfig->getData('close_reason')), $gameConfig->getData('game_name'));
+        if (Wootook::getGameConfig('game/general/active') && $user !== null && !in_array($user->getData('authlevel'), array(LEVEL_ADMIN, LEVEL_MODERATOR, LEVEL_OPERATOR))) {
+            $layout = new Wootook_Core_Layout();
+            $layout->load('message');
+
+            $block = $layout->getBlock('message');
+            $block['title'] = Wootook::__('Game is disabled.');
+            $block['message'] = Wootook::getGameConfig('game/general/closing-message');
+
+            echo $layout->render();
             exit(0);
         }
     }

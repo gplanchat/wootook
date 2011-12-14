@@ -2,48 +2,36 @@
 /**
  * This file is part of Wootook
  *
- * @license Modified BSD
- * @see https://github.com/gplanchat/one.platform
+ * @license http://www.gnu.org/licenses/agpl-3.0.txt
+ * @see http://www.wootook.com/
  *
- * Copyright (c) 2009-2010, Grégory PLANCHAT <g.planchat at gmail.com>
+ * Copyright (c) 2011-Present, Grégory PLANCHAT <g.planchat@gmail.com>
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     - Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *     - Redistributions in binary form must reproduce the above copyright notice,
- *       this list of conditions and the following disclaimer in the documentation
- *       and/or other materials provided with the distribution.
- *
- *     - Neither the name of Grégory PLANCHAT nor the names of its
- *       contributors may be used to endorse or promote products derived from this
- *       software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *                                --> NOTICE <--
  *  This file is part of the core development branch, changing its contents will
  * make you unable to use the automatic updates manager. Please refer to the
- * documentation for further information about customizing One.Platform.
+ * documentation for further information about customizing Wootook.
  *
  */
 
-$this->setSetupConnection('legacies_setup');
+$this->setSetupConnection('core_setup');
 
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/aks')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('aks')} (
     `id`                    BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `name`                  VARCHAR(50)         NULL,
     `teilnehmer`            TEXT                NULL,
@@ -59,14 +47,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/aks', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/aks', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/aks', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/alliance')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('alliance')} (
     `id`                    BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `ally_name`             VARCHAR(32)         NOT NULL,
     `ally_tag`              VARCHAR(8)          NOT NULL,
@@ -88,14 +70,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/alliance', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/alliance', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/alliance', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/annonce')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('annonce')} (
     `id`                    SMALLINT UNSIGNED   NOT NULL    AUTO_INCREMENT,
     `user`                  TEXT                NOT NULL,
     `galaxie`               TINYINT UNSIGNED    NOT NULL,
@@ -112,14 +88,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/annonce', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/annonce', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/annonce', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/banned')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('banned')} (
     `id`                    BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `who`                   BIGINT UNSIGNED     NOT NULL,
     `theme`                 TEXT                NOT NULL,
@@ -134,14 +104,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/banned', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/banned', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/banned', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/buddy')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('buddy')} (
     `id`                    BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `sender`                BIGINT UNSIGNED     NOT NULL,
     `owner`                 BIGINT UNSIGNED     NOT NULL,
@@ -153,14 +117,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/buddy', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/buddy', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/buddy', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/chat')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('chat')} (
     `messageid`             BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `user`                  VARCHAR(255)        NOT NULL,
     `message`               TEXT                NOT NULL,
@@ -171,83 +129,213 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/chat', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/chat', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/chat', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/config')} (
-    `config_name`           VARCHAR(64)         NOT NULL,
-    `config_value`          TEXT                NOT NULL,
-    UNIQUE KEY (`config_name`)
+CREATE TABLE IF NOT EXISTS {$this->getTableName('core_website')} (
+    `website_id`            TINYINT UNSIGNED    NOT NULL,
+    `code`                  VARCHAR(64)         NOT NULL,
+    `name`                  VARCHAR(255)        NOT NULL,
+    `sort_order`            TINYINT UNSIGNED    NOT NULL,
+    `default_group_id`      TINYINT UNSIGNED    NOT NULL,
+    `is_default`            BOOL                NOT NULL,
+    `is_staging`            BOOL                NOT NULL,
+    `is_active`             BOOL                NOT NULL,
+    PRIMARY KEY (`webste_id`),
+    UNIQUE (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/config', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/config', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/config', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-INSERT INTO {$this->getTableName('legacies/config')} (`config_name`, `config_value`) VALUES
-    ('game_speed', '2500'),
-    ('fleet_speed', '2500'),
-    ('resource_multiplier', '1000'),
-    ('Fleet_Cdr', '30'),
-    ('Defs_Cdr', '30'),
-    ('initial_fields', '5000'),
-    ('COOKIE_NAME', 'xnova-legacies'),
-    ('game_name', 'Wootook:Legacies'),
-    ('game_disable', '1'),
-    ('close_reason', 'Le jeu est clos pour le moment!'),
-    ('metal_basic_income', '20'),
-    ('crystal_basic_income', '10'),
-    ('deuterium_basic_income', '0'),
-    ('energy_basic_income', '0'),
-    ('BuildLabWhileRun', '0'),
-    ('LastSettedGalaxyPos', '1'),
-    ('LastSettedSystemPos', '1'),
-    ('LastSettedPlanetPos', '1'),
-    ('urlaubs_modus_erz', '1'),
-    ('noobprotection', '1'),
-    ('noobprotectiontime', '5000'),
-    ('noobprotectionmulti', '5'),
-    ('forum_url', 'http://board.xnova-ng.org/'),
-    ('OverviewNewsFrame', '1'),
-    ('OverviewNewsTEXT', 'Bienvenue sur le nouveau serveur Wootook Legacies'),
-    ('OverviewExternChat', '0'),
-    ('OverviewExternChatCmd', ''),
-    ('OverviewBanner', '0'),
-    ('OverviewClickBanner', ''),
-    ('ExtCopyFrame', '0'),
-    ('ExtCopyOwner', ''),
-    ('ExtCopyFunct', ''),
-    ('ForumBannerFrame', '0'),
-    ('stat_settings', '1000'),
-    ('link_enable', '0'),
-    ('link_name', ''),
-    ('link_url', ''),
-    ('enable_announces', '1'),
-    ('enable_marchand', '1'),
-    ('enable_notes', '1'),
-    ('bot_name', 'XNoviana Reali'),
-    ('bot_adress', 'xnova@xnova.fr'),
-    ('banner_source_post', '../images/bann.png'),
-    ('ban_duration', '30'),
-    ('enable_bot', '0'),
-    ('enable_bbcode', '1'),
-    ('debug', '0');
+CREATE TABLE IF NOT EXISTS {$this->getTableName('core_game_group')} (
+    `group_id`              TINYINT UNSIGNED    NOT NULL,
+    `website_id`            TINYINT UNSIGNED    NOT NULL,
+    `code`                  VARCHAR(64)         NOT NULL,
+    `name`                  VARCHAR(255)        NOT NULL,
+    `sort_order`            TINYINT UNSIGNED    NOT NULL,
+    `is_default`            BOOL                NOT NULL,
+    PRIMARY KEY (`group_id`),
+    INDEX (`webste_id`),
+    UNIQUE (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/declared')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('core_game')} (
+    `game_id`               SMALLINT UNSIGNED   NOT NULL,
+    `group_id`              TINYINT UNSIGNED    NOT NULL,
+    `website_id`            TINYINT UNSIGNED    NOT NULL,
+    `code`                  VARCHAR(64)         NOT NULL,
+    `name`                  VARCHAR(255)        NOT NULL,
+    `sort_order`            TINYINT UNSIGNED    NOT NULL,
+    `is_default`            BOOL                NOT NULL,
+    `is_staging`            BOOL                NOT NULL,
+    `is_active`             BOOL                NOT NULL,
+    PRIMARY KEY (`group_id`),
+    INDEX (`webste_id`),
+    UNIQUE (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+INSERT INTO {$this->getTableName('core_website')} (`website_id`, `code`, `name`, `sort_order`, `default_group_id`, `is_default`, `is_staging`, `is_active`)
+VALUES
+(0, "admin", "Administration", 0, 0, 0, 0, 1),
+(1, "default", "Default Website", 1, 1, 1, 0, 1);
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+INSERT INTO {$this->getTableName('core_game_group')} (`group_id`, `website_id`, `code`, `name`, `sort_order`, `is_default`)
+VALUES
+(0, 0, "admin", "Administration", 0, 0),
+(1, 1, "default", "Default Group", 1, 1);
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+INSERT INTO {$this->getTableName('core_game')} (`game_id`, `group_id`, `website_id`, `code`, `name`, `sort_order`, `is_default`, `is_staging`, `is_active`)
+VALUES
+(0, 0, 0, "admin", "Administration", 0, 0, 0, 1),
+(1, 1, 1, "default", "Default Game", 1, 1, 0, 1);
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+CREATE TABLE IF NOT EXISTS {$this->getTableName('core_config')} (
+    `website_id`            TINYINT UNSIGNED    NOT NULL,
+    `game_id`               TINYINT UNSIGNED    NOT NULL,
+    `config_path`           VARCHAR(64)         NOT NULL,
+    `config_value`          VARCHAR(255)        NOT NULL,
+    PRIMARY KEY (`website_id`, `game_id`, `config_path`),
+    INDEX (`website_id`),
+    INDEX (`game_id`),
+    INDEX (`config_path`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+INSERT IGNORE INTO {$this->getTableName('core_config')} (`webste_id`, `game_id`, `config_path`, `config_value`) VALUES
+    (1, 1, 'resource/base-income/metal', '20'),
+    (1, 1, 'resource/base-income/cristal', '10'),
+    (1, 1, 'resource/base-income/deuterium', '0'),
+    (1, 1, 'resource/base-income/energy', '0'),
+
+    (1, 1, 'resource/initial/fields', '163'),
+    (1, 1, 'resource/initial/metal', '500'),
+    (1, 1, 'resource/initial/cristal', '500'),
+    (1, 1, 'resource/initial/deuterium', '0'),
+    (1, 1, 'resource/initial/energy', '0'),
+
+    (1, 1, 'game/general/name', 'Wootook'),
+    (1, 1, 'game/general/boards-url', 'http://wootook.org/board/'),
+    (1, 1, 'game/general/extra-url-title', 'Wootook!'),
+    (1, 1, 'game/general/extra-url', 'http://wootook.org/'),
+    (1, 1, 'game/general/active', '1'),
+    (1, 1, 'game/general/closing-message', 'Le jeu est clos pour le moment.'),
+    (1, 1, 'game/general/locale', 'fr_FR'),
+
+    (1, 1, 'game/resource/multiplier', '1000'),
+    (1, 1, 'game/speed/general', '2500'),
+    (1, 1, 'game/speed/fleet', '2500'),
+
+    (1, 1, 'game/debris/metal-percent', '30'),
+    (1, 1, 'game/debris/cristal-percent', '30'),
+    (1, 1, 'game/debris/deuterium-percent', '0'),
+    (1, 1, 'game/debris/energy-percent', '0'),
+
+    (1, 1, 'game/debris/fleet', '1'),
+    (1, 1, 'game/debris/defense', '0'),
+
+    (1, 1, 'game/noob-protection/active', '0'),
+    (1, 1, 'game/noob-protection/points-cap', '5000'),
+    (1, 1, 'game/noob-protection/multiplier', '5'),
+
+    (0, 0, 'web/cookie/name', '__wtk'),
+    (0, 0, 'web/cookie/time', '2592000'),
+    (0, 0, 'web/cookie/domain', ''),
+    (0, 0, 'web/cookie/path', ''),
+
+    (0, 0, 'engine/options/bbcode', '1'),
+    (0, 0, 'engine/options/ga', '1'),
+    (0, 0, 'engine/options/announces', '0'),
+    (0, 0, 'engine/options/retailer', '0'),
+    (0, 0, 'engine/options/notes', '0'),
+    (0, 0, 'engine/options/chat', '0'),
+    (0, 0, 'engine/options/banner', '0'),
+    (0, 0, 'engine/options/vacation-min-time', '172800'),
+
+    (0, 0, 'game/news/active', '0'),
+    (0, 0, 'game/news/content', 'Bienvenue sur le nouveau serveur de jeu Wootook!'),
+
+    (0, 0, 'engine/ban/duration', '86400'),
+
+    (0, 0, 'engine/bot/active', '0'),
+    (0, 0, 'engine/bot/name', 'Woot'),
+    (0, 0, 'engine/bot/email', 'contact@wootook.org'),
+
+--------------------------------------------------------------------------------
+
+--    (0, 0, 'game_speed', '2500'),
+--    (0, 0, 'fleet_speed', '2500'),
+--    (0, 0, 'resource_multiplier', '1000'),
+
+--    (0, 0, 'metal_basic_income', '20'),
+--    (0, 0, 'cristal_basic_income', '10'),
+--    (0, 0, 'deuterium_basic_income', '0'),
+--    (0, 0, 'energy_basic_income', '0'),
+
+--    (0, 0, 'Fleet_Cdr', '30'),
+--    (0, 0, 'Defs_Cdr', '30'),
+--    (0, 0, 'initial_fields', '5000'),
+--    (0, 0, 'COOKIE_NAME', 'wootook'),
+--    (0, 0, 'game_name', 'Wootook'),
+--    (0, 0, 'game_disable', '1'),
+--    (0, 0, 'close_reason', 'Le jeu est clos pour le moment.'),
+    (0, 0, 'BuildLabWhileRun', '0'),
+--    (0, 0, 'urlaubs_modus_erz', '1'),
+--    (0, 0, 'noobprotection', '1'),
+--    (0, 0, 'noobprotectiontime', '5000'),
+--    (0, 0, 'noobprotectionmulti', '5'),
+--    (0, 0, 'forum_url', 'http://wootook.org/board/'),
+--    (0, 0, 'OverviewNewsFrame', '1'),
+--    (0, 0, 'OverviewNewsTEXT', 'Bienvenue sur le nouveau serveur Wootook'),
+--    (0, 0, 'OverviewExternChat', '0'),
+--    (0, 0, 'OverviewExternChatCmd', ''),
+--    (0, 0, 'OverviewBanner', '0'),
+--    (0, 0, 'OverviewClickBanner', ''),
+    (0, 0, 'ExtCopyFrame', '0'),
+    (0, 0, 'ExtCopyOwner', ''),
+    (0, 0, 'ExtCopyFunct', ''),
+--    (0, 0, 'ForumBannerFrame', '0'),
+--    (0, 0, 'stat_settings', '1000'),
+--    (0, 0, 'link_enable', '0'),
+--    (0, 0, 'link_name', ''),
+--    (0, 0, 'link_url', ''),
+--    (0, 0, 'enable_announces', '1'),
+--    (0, 0, 'enable_marchand', '1'),
+--    (0, 0, 'enable_notes', '1'),
+--    (0, 0, 'bot_name', 'Isaac'),
+--    (0, 0, 'bot_adress', 'contact@wootook.org'),
+--    (0, 0, 'banner_source_post', '../images/bann.png'),
+--    (0, 0, 'ban_duration', '30'),
+--    (0, 0, 'enable_bot', '0'),
+--    (0, 0, 'enable_bbcode', '1');
+SQL_EOF;
+
+$this->query($sql);
+
+$sql = <<<SQL_EOF
+CREATE TABLE IF NOT EXISTS {$this->getTableName('declared')} (
     `declarator`            TEXT                NOT NULL,
     `declared_1`            TEXT                NOT NULL,
     `declared_2`            TEXT                NOT NULL,
@@ -259,14 +347,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/declared', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/declared', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/declared', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/errors')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('errors')} (
     `error_id`              BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `error_sender`          VARCHAR(32)         NOT NULL,
     `error_time`            TIMESTAMP           NOT NULL,
@@ -278,14 +360,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/errors', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/errors', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/errors', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/fleets')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('fleets')} (
     `fleet_id`                  BIGINT UNSIGNED     NOT NULL    AUTO_INCREMENT,
     `fleet_owner`               BIGINT UNSIGNED     NOT NULL,
     `fleet_mission`             TINYINT UNSIGNED    NOT NULL,
@@ -316,15 +392,9 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/fleets', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/fleets', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/fleets', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/galaxy')} (
-    `galaxy`                TINYINT UNSIGNED    NOT NULL,
+CREATE TABLE IF NOT EXISTS {$this->getTableName('galaxy')} (
+    `galaxy`                SMALLINT UNSIGNED   NOT NULL,
     `system`                SMALLINT UNSIGNED   NOT NULL,
     `planet`                TINYINT UNSIGNED    NOT NULL,
     `id_planet`             BIGINT UNSIGNED     NOT NULL,
@@ -341,14 +411,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/galaxy', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/galaxy', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/galaxy', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/iraks')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('iraks')} (
     `id`                    BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `zeit`                  TIMESTAMP               NOT NULL,
     `galaxy`                TINYINT UNSIGNED        NOT NULL,
@@ -367,14 +431,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/iraks', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/iraks', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/iraks', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/lunas')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('lunas')} (
     `id`                    BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `id_luna`               BIGINT UNSIGNED         NOT NULL,
     `name`                  VARCHAR(100)            NOT NULL    DEFAULT 'Lune',
@@ -393,14 +451,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/lunas', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/lunas', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/lunas', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/messages')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('messages')} (
     `message_id`            BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `message_owner`         BIGINT UNSIGNED         NOT NULL,
     `message_sender`        BIGINT UNSIGNED         NOT NULL,
@@ -415,14 +467,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/messages', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/messages', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/messages', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/multi')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('multi')} (
     `id`                    BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `player`                BIGINT UNSIGNED         NOT NULL,
     `sharer`                BIGINT UNSIGNED         NOT NULL,
@@ -433,14 +479,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/multi', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/multi', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/multi', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/notes')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('notes')} (
     `id`                    BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `owner`                 BIGINT UNSIGNED         NOT NULL,
     `time`                  TIMESTAMP               NOT NULL,
@@ -453,14 +493,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/notes', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/notes', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/notes', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/planets')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('planets')} (
     `id`                            BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `name`                          VARCHAR(100)            NOT NULL,
     `id_owner`                      BIGINT UNSIGNED         NOT NULL,
@@ -489,16 +523,16 @@ CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/planets')} (
     `metal`                         DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `metal_perhour`                 DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `metal_max`                     DECIMAL(65,0)           NOT NULL    DEFAULT 0,
-    `crystal`                       DECIMAL(65,0)           NOT NULL    DEFAULT 0,
-    `crystal_perhour`               DECIMAL(65,0)           NOT NULL    DEFAULT 0,
-    `crystal_max`                   DECIMAL(65,0)           NOT NULL    DEFAULT 0,
+    `cristal`                       DECIMAL(65,0)           NOT NULL    DEFAULT 0,
+    `cristal_perhour`               DECIMAL(65,0)           NOT NULL    DEFAULT 0,
+    `cristal_max`                   DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `deuterium`                     DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `deuterium_perhour`             DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `deuterium_max`                 DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `energy_used`                   DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `energy_max`                    DECIMAL(65,0)           NOT NULL    DEFAULT 0,
     `metal_mine`                    SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
-    `crystal_mine`                  SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
+    `cristal_mine`                  SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `deuterium_sintetizer`          SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `solar_plant`                   SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `fusion_plant`                  SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
@@ -506,7 +540,7 @@ CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/planets')} (
     `nano_factory`                  SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `hangar`                        SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `metal_store`                   SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
-    `crystal_store`                 SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
+    `cristal_store`                 SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `deuterium_store`               SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `laboratory`                    SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
     `terraformer`                   SMALLINT UNSIGNED       NOT NULL    DEFAULT 0,
@@ -540,7 +574,7 @@ CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/planets')} (
     `interceptor_misil`             SMALLINT                NOT NULL    DEFAULT 0,
     `interplanetary_misil`          SMALLINT                NOT NULL    DEFAULT 0,
     `metal_mine_porcent`            TINYINT                 NOT NULL    DEFAULT 10,
-    `crystal_mine_porcent`          TINYINT                 NOT NULL    DEFAULT 10,
+    `cristal_mine_porcent`          TINYINT                 NOT NULL    DEFAULT 10,
     `deuterium_sintetizer_porcent`  TINYINT                 NOT NULL    DEFAULT 10,
     `solar_plant_porcent`           TINYINT                 NOT NULL    DEFAULT 10,
     `fusion_plant_porcent`          TINYINT                 NOT NULL    DEFAULT 10,
@@ -552,14 +586,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/planets', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/planets', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/planets', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/rw')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('rw')} (
     `id_owner1`             BIGINT UNSIGNED         NOT NULL,
     `id_owner2`             BIGINT UNSIGNED         NOT NULL,
     `rid`                   VARCHAR(72)             NOT NULL,
@@ -574,14 +602,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/rw', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/rw', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/rw', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/statpoints')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('statpoints')} (
     `id_owner`              BIGINT UNSIGNED         NOT NULL,
     `id_ally`               BIGINT UNSIGNED         NOT NULL,
     `stat_type`             TINYINT UNSIGNED        NOT NULL,
@@ -617,14 +639,8 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/statpoints', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/statpoints', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/statpoints', 'legacies_setup')
-;
-
 $sql = <<<SQL_EOF
-CREATE TABLE IF NOT EXISTS {$this->getTableName('legacies/users')} (
+CREATE TABLE IF NOT EXISTS {$this->getTableName('users')} (
     `id`                        BIGINT UNSIGNED         NOT NULL    AUTO_INCREMENT,
     `username`                  VARCHAR(100)            NOT NULL,                   -- FIXME
     `password`                  VARCHAR(64)             NOT NULL,                   -- FIXME
@@ -736,57 +752,320 @@ SQL_EOF;
 
 $this->query($sql);
 
-$this
-    ->grant('legacies/users', 'legacies_read',  array('SELECT'))
-    ->grant('legacies/users', 'legacies_write', array('SELECT', 'CREATE', 'UPDATE', 'DELETE'))
-    ->grant('legacies/users', 'legacies_setup')
-;
+/*
+ * Galaxy positions generation
+ */
+$galaxyCount = Wootook::getConfig('default/engine/universe/galaxies');
+$systemCount = Wootook::getConfig('default/engine/universe/systems');
 
 $sql = <<<SQL_EOF
-INSERT INTO {$this->getTableName('legacies/alliance')} (
-    `id`, `ally_name`, `ally_tag`, `ally_owner`, `ally_register_time`, `ally_description`,
-    `ally_web`, `ally_text`, `ally_image`, `ally_request`, `ally_request_waiting`,
-    `ally_request_notallow`, `ally_owner_range`, `ally_ranks`, `ally_members`
-    )
-    VALUES
-    ('1', 'Admin', 'Admin', 1, NOW(), 'Administrator alliance', 'http://www.xnova-ng.org/',
-    '', '', '', '', '', '', '', '')
+INSERT INTO {$this->getTableName('galaxy')}
+    (`galaxy`, `system`, `planet`, `id_planet`, `metal`, `crystal`, `id_luna`, `luna`)
+  SELECT
+     _increment.galaxy AS `galaxy`,
+     _increment.system AS `system`,
+     0 AS `planet`,
+     0 AS `id_planet`,
+     0 AS `metal`,
+     0 AS `crystal`,
+     0 AS `id_luna`,
+     0 AS `luna`
+  FROM (
+    SELECT
+        (1 + _galaxy_10e0.galaxy + _galaxy_10e1.galaxy + _galaxy_10e2.galaxy + _galaxy_10e3.galaxy + _galaxy_10e4.galaxy) AS galaxy,
+        (1 + _system_10e0.system + _system_10e1.system + _system_10e2.system + _system_10e3.system + _system_10e4.system) AS system
+    FROM (
+        SELECT 0 AS system
+        UNION ALL
+        SELECT 1 AS system
+        UNION ALL
+        SELECT 2 AS system
+        UNION ALL
+        SELECT 3 AS system
+        UNION ALL
+        SELECT 4 AS system
+        UNION ALL
+        SELECT 5 AS system
+        UNION ALL
+        SELECT 6 AS system
+        UNION ALL
+        SELECT 7 AS system
+        UNION ALL
+        SELECT 8 AS system
+        UNION ALL
+        SELECT 9 AS system
+      ) AS _system_10e0
 SQL_EOF;
 
-$this->query($sql);
+if ($systemCount > 10) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0  AS system
+        UNION ALL
+        SELECT 10 AS system
+        UNION ALL
+        SELECT 20 AS system
+        UNION ALL
+        SELECT 30 AS system
+        UNION ALL
+        SELECT 40 AS system
+        UNION ALL
+        SELECT 50 AS system
+        UNION ALL
+        SELECT 60 AS system
+        UNION ALL
+        SELECT 70 AS system
+        UNION ALL
+        SELECT 80 AS system
+        UNION ALL
+        SELECT 90 AS system
+      ) AS _system_10e1
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS system) AS _system_10e1
+SQL_EOF;
+}
 
-$sql = <<<SQL_EOF
-INSERT INTO {$this->getTableName('legacies/users')} (
-    `id`, `username`, `password`, `email`, `email_2`, `lang`, `authlevel`, `sex`,
-    `avatar`, `sign`, `id_planet`, `galaxy`, `system`, `planet`, `current_planet`,
-    `user_lastip`, `ip_at_reg`, `user_agent`, `current_page`, `register_time`,
-    `onlinetime`, `dpath`, `design`, `noipcheck`, `planet_sort`, `planet_sort_order`,
-    `spio_anz`, `settings_tooltiptime`, `settings_fleetactions`, `settings_allylogo`,
-    `settings_esp`, `settings_wri`, `settings_bud`, `settings_mis`, `settings_rep`,
-    `urlaubs_modus`, `urlaubs_until`, `db_deaktjava`, `new_message`, `fleet_shortcut`,
-    `b_tech_planet`, `spy_tech`, `computer_tech`, `military_tech`, `defence_tech`,
-    `shield_tech`, `energy_tech`, `hyperspace_tech`, `combustion_tech`,
-    `impulse_motor_tech`, `hyperspace_motor_tech`, `laser_tech`, `ionic_tech`,
-    `buster_tech`, `intergalactic_tech`, `expedition_tech`, `graviton_tech`,
-    `ally_id`, `ally_name`, `ally_request`, `ally_request_text`, `ally_register_time`,
-    `ally_rank_id`, `current_luna`, `kolorminus`, `kolorplus`, `kolorpoziom`,
-    `rpg_geologue`, `rpg_amiral`, `rpg_ingenieur`, `rpg_technocrate`, `rpg_espion`,
-    `rpg_constructeur`, `rpg_scientifique`, `rpg_commandant`, `rpg_points`, `rpg_stockeur`,
-    `rpg_defenseur`, `rpg_destructeur`, `rpg_general`, `rpg_bunker`, `rpg_raideur`,
-    `rpg_empereur`, `lvl_minier`, `lvl_raid`, `xpraid`, `xpminier`, `raids`,
-    `p_infligees`, `mnl_alliance`, `mnl_joueur`, `mnl_attaque`, `mnl_spy`,
-    `mnl_exploit`, `mnl_transport`, `mnl_expedition`, `mnl_general`, `mnl_buildlist`,
-    `bana`, `multi_validated`, `banaday`, `raids1`, `raidswin`, `raidsloose`
-    )
-    VALUES
-    ('1', 'Admin', '', '', '', 'fr', '3', NULL, '', '', '1', '1', '1', '1',
-    '1', '127.0.0.1', '', '', '', '1254743313', '1269391977', '', '1', '1', '0',
-    '0', '1', '5', '0', '0', '1', '1', '1', '1', '0', '0', '0', '0', '0', '', '0',
-    '16', '20', '11', '11', '11', '12', '10', '14', '10', '9', '0', '0', '0', '0',
-    '0', '1', 1, 'Admin', '0', '', NOW(), '0', '0', 'red', '#00FF00', 'yellow', '20',
-    '20', '10', '10', '0', '3', '3', '0', '27', '2', '2', '0', '0', '0', '0', '0',
-    '98', '1', '0', '1133583738', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-    '0', '0', '0', '0', '0', '0', '0', '0')
+if ($systemCount > 100) {
+$sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0   AS system
+        UNION ALL
+        SELECT 100 AS system
+        UNION ALL
+        SELECT 200 AS system
+        UNION ALL
+        SELECT 300 AS system
+        UNION ALL
+        SELECT 400 AS system
+        UNION ALL
+        SELECT 500 AS system
+        UNION ALL
+        SELECT 600 AS system
+        UNION ALL
+        SELECT 700 AS system
+        UNION ALL
+        SELECT 800 AS system
+        UNION ALL
+        SELECT 900 AS system
+      ) AS _system_10e2
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS system) AS _system_10e2
+SQL_EOF;
+}
+
+if ($systemCount > 1000) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0    AS system
+        UNION ALL
+        SELECT 1000 AS system
+        UNION ALL
+        SELECT 2000 AS system
+        UNION ALL
+        SELECT 3000 AS system
+        UNION ALL
+        SELECT 4000 AS system
+        UNION ALL
+        SELECT 5000 AS system
+        UNION ALL
+        SELECT 6000 AS system
+        UNION ALL
+        SELECT 7000 AS system
+        UNION ALL
+        SELECT 8000 AS system
+        UNION ALL
+        SELECT 9000 AS system
+      ) AS _system_10e3
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS system) AS _system_10e3
+SQL_EOF;
+}
+
+if ($systemCount > 10000) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0     AS system
+        UNION ALL
+        SELECT 10000 AS system
+        UNION ALL
+        SELECT 20000 AS system
+        UNION ALL
+        SELECT 30000 AS system
+        UNION ALL
+        SELECT 40000 AS system
+        UNION ALL
+        SELECT 50000 AS system
+        UNION ALL
+        SELECT 60000 AS system
+        UNION ALL
+        SELECT 70000 AS system
+        UNION ALL
+        SELECT 80000 AS system
+        UNION ALL
+        SELECT 90000 AS system
+      ) AS _system_10e4
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS system) AS _system_10e4
+SQL_EOF;
+}
+
+$sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0 AS galaxy
+        UNION ALL
+        SELECT 1 AS galaxy
+        UNION ALL
+        SELECT 2 AS galaxy
+        UNION ALL
+        SELECT 3 AS galaxy
+        UNION ALL
+        SELECT 4 AS galaxy
+        UNION ALL
+        SELECT 5 AS galaxy
+        UNION ALL
+        SELECT 6 AS galaxy
+        UNION ALL
+        SELECT 7 AS galaxy
+        UNION ALL
+        SELECT 8 AS galaxy
+        UNION ALL
+        SELECT 9 AS galaxy
+      ) AS _galaxy_10e0
+SQL_EOF;
+
+if ($systemCount > 10) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0  AS galaxy
+        UNION ALL
+        SELECT 10 AS galaxy
+        UNION ALL
+        SELECT 20 AS galaxy
+        UNION ALL
+        SELECT 30 AS galaxy
+        UNION ALL
+        SELECT 40 AS galaxy
+        UNION ALL
+        SELECT 50 AS galaxy
+        UNION ALL
+        SELECT 60 AS galaxy
+        UNION ALL
+        SELECT 70 AS galaxy
+        UNION ALL
+        SELECT 80 AS galaxy
+        UNION ALL
+        SELECT 90 AS galaxy
+      ) AS _galaxy_10e1
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS galaxy) AS _galaxy_10e1
+SQL_EOF;
+}
+
+if ($systemCount > 100) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0   AS galaxy
+        UNION ALL
+        SELECT 100 AS galaxy
+        UNION ALL
+        SELECT 200 AS galaxy
+        UNION ALL
+        SELECT 300 AS galaxy
+        UNION ALL
+        SELECT 400 AS galaxy
+        UNION ALL
+        SELECT 500 AS galaxy
+        UNION ALL
+        SELECT 600 AS galaxy
+        UNION ALL
+        SELECT 700 AS galaxy
+        UNION ALL
+        SELECT 800 AS galaxy
+        UNION ALL
+        SELECT 900 AS galaxy
+      ) AS _galaxy_10e2
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS galaxy) AS _galaxy_10e2
+SQL_EOF;
+}
+
+if ($systemCount > 1000) {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0    AS galaxy
+        UNION ALL
+        SELECT 1000 AS galaxy
+        UNION ALL
+        SELECT 2000 AS galaxy
+        UNION ALL
+        SELECT 3000 AS galaxy
+        UNION ALL
+        SELECT 4000 AS galaxy
+        UNION ALL
+        SELECT 5000 AS galaxy
+        UNION ALL
+        SELECT 6000 AS galaxy
+        UNION ALL
+        SELECT 7000 AS galaxy
+        UNION ALL
+        SELECT 8000 AS galaxy
+        UNION ALL
+        SELECT 9000 AS galaxy
+      ) AS _galaxy_10e3
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS galaxy) AS _galaxy_10e3
+SQL_EOF;
+}
+
+if ($systemCount > 10000) {
+$sql .= <<<SQL_EOF
+    CROSS JOIN (
+        SELECT 0     AS galaxy
+        UNION ALL
+        SELECT 10000 AS galaxy
+        UNION ALL
+        SELECT 20000 AS galaxy
+        UNION ALL
+        SELECT 30000 AS galaxy
+        UNION ALL
+        SELECT 40000 AS galaxy
+        UNION ALL
+        SELECT 50000 AS galaxy
+        UNION ALL
+        SELECT 60000 AS galaxy
+        UNION ALL
+        SELECT 70000 AS galaxy
+        UNION ALL
+        SELECT 80000 AS galaxy
+        UNION ALL
+        SELECT 90000 AS galaxy
+      ) AS _galaxy_10e4
+SQL_EOF;
+} else {
+    $sql .= <<<SQL_EOF
+    CROSS JOIN (SELECT 0 AS galaxy) AS _galaxy_10e4
+SQL_EOF;
+}
+
+$sql .= <<<SQL_EOF
+    ) _increment
+
+  WHERE _increment.galaxy<={$galaxyCount}
+    AND _increment.system<={$systemCount}
 SQL_EOF;
 
 $this->query($sql);
