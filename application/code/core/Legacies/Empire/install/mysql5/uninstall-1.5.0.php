@@ -40,124 +40,112 @@
  *
  */
 
-$this->setSetupConnection('legacies_setup');
+$this->setSetupConnection('core_setup');
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/aks')};
+DROP TABLE {$this->getTableName('aks')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/alliance')};
+DROP TABLE {$this->getTableName('alliance')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/annonce')};
+DROP TABLE {$this->getTableName('annonce')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/banned')};
+DROP TABLE {$this->getTableName('banned')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/buddy')};
+DROP TABLE {$this->getTableName('buddy')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/chat')};
+DROP TABLE {$this->getTableName('chat')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/config')};
+DROP TABLE {$this->getTableName('declared')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/declared')};
+DROP TABLE {$this->getTableName('fleets')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/errors')};
+DROP TABLE {$this->getTableName('galaxy')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/fleets')};
+DROP TABLE {$this->getTableName('iraks')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/galaxy')};
+DROP TABLE {$this->getTableName('lunas')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/iraks')};
+DROP TABLE {$this->getTableName('messages')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/lunas')};
+DROP TABLE {$this->getTableName('multi')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/messages')};
+DROP TABLE {$this->getTableName('notes')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/multi')};
+DROP TABLE {$this->getTableName('planets')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/notes')};
+DROP TABLE {$this->getTableName('rw')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/planets')};
+DROP TABLE {$this->getTableName('statpoints')};
 SQL_EOF;
 
 $this->query($sql);
 
 $sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/rw')};
-SQL_EOF;
-
-$this->query($sql);
-
-$sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/statpoints')};
-SQL_EOF;
-
-$this->query($sql);
-
-$sql = <<<SQL_EOF
-DROP TABLE {$this->getTableName('legacies/users')};
+DROP TABLE {$this->getTableName('users')};
 SQL_EOF;
 
 $this->query($sql);

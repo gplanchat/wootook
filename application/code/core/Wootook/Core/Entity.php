@@ -34,8 +34,16 @@ abstract class Wootook_Core_Entity
     {
         $id = func_get_arg(0);
 
-        $idFieldName = self::getIdFieldName();
+        if (func_num_args() >= 2) {
+            $idFieldName = func_get_arg(1);
+        } else {
+            $idFieldName = $this->getIdFieldName();
+        }
+
         $database = $this->getReadConnection();
+        if ($database === null) {
+            throw new Wootook_Core_Exception_DataAccessException('Could not load data: no read connection configured.');
+        }
 
         $sql =<<<SQL_EOF
 SELECT * FROM {$database->getTable($this->getTableName())}
@@ -61,6 +69,8 @@ SQL_EOF;
 
     protected function _save()
     {
+        $database = $this->getWriteConnection();
+
         if ($this->getId() !== null) {
             $fields = array();
             $values = array();
@@ -68,7 +78,7 @@ SQL_EOF;
                 if ($field == self::getIdFieldName()) {
                     continue;
                 }
-                $fields[] = "{$field}=:{$field}";
+                $fields[] = "{$database->quoteIdentifier($field)}=:{$field}";
                 $values[$field] = $value;
             }
 
@@ -76,7 +86,10 @@ SQL_EOF;
             $idFieldName = self::getIdFieldName();
             $values[$idFieldName] = $this->getId();
 
-            $database = $this->getWriteConnection();
+            if ($database === null) {
+                throw new Wootook_Core_Exception_DataAccessException('Could not load data: no write connection configured.');
+            }
+
             $sql =<<<SQL_EOF
 UPDATE {$database->getTable($this->getTableName())}
     SET {$fieldsImploded}
@@ -87,8 +100,8 @@ SQL_EOF;
             $statement->execute($values);
         } else {
             $datas = $this->getAllDatas();
-            $fieldsImploded = implode(', ', array_keys($datas));
 
+            $fields = array();
             $tokens = array();
             $values = array();
             foreach ($datas as $field => $value) {
@@ -96,20 +109,27 @@ SQL_EOF;
                     continue;
                 }
                 $tokens[] = ":{$field}";
-                $values[$field] = $value;
+                $fields[] = $database->quoteIdentifier($field);
+                $values[$field] = strval($value);
             }
             $tokensImploded = implode(', ', $tokens);
+            $fieldsImploded = implode(', ', $fields);
 
-            $database = $this->getWriteConnection();
+            if ($database === null) {
+                throw new Wootook_Core_Exception_DataAccessException('Could not load data: no write connection configured.');
+            }
+
+            $table = $database->getTable($this->getTableName());
             $sql =<<<SQL_EOF
-INSERT INTO {$database->getTable($this->getTableName())} ($fieldsImploded)
-    VALUES ({$tokensImploded})
+INSERT INTO {$database->quoteIdentifier($table)} ({$database->quoteIdentifier($this->getIdFieldName())}, $fieldsImploded)
+    VALUES (NULL, {$tokensImploded})
 SQL_EOF;
             $statement = $database->prepare($sql);
 
             $statement->execute($values);
 
-            $this->setId($database->lastInsertId());
+            $id = $database->lastInsertId($table);
+            $this->setId($id);
         }
 
         return $this;
@@ -128,6 +148,10 @@ SQL_EOF;
         $fieldsImploded = implod(', ', $fields);
         $idFieldName = self::getIdFieldName();
         $database = $this->getWriteConnection();
+        if ($database === null) {
+            throw new Wootook_Core_Exception_DataAccessException('Could not load data: no write connection configured.');
+        }
+
         $sql =<<<SQL_EOF
 DELETE {$database->getTable($this->getTableName())}
     WHERE {$idFieldName}=:{$idFieldName}

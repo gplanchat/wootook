@@ -55,56 +55,73 @@ class Wootook
      *
      * @var Legacies_Core_Controller_Request_Http
      */
-    protected static $_request = null;
+    private static $_request = null;
 
     /**
      * HTTP response management object
      *
      * @var Legacies_Core_Controller_Response
      */
-    protected static $_response = null;
+    private static $_response = null;
 
     /**
      * The current timestamp
      *
      * @var int
      */
-    protected static $_now = null;
+    private static $_now = null;
 
     /**
      * Default locale identifier
      *
      * @var string
      */
-    protected static $_defaultLocale = 'fr_FR';
+    private static $_defaultLocale = 'fr_FR';
 
     /**
      *
      * Enter description here ...
      * @var Wootook_Core_Config_Adapter_Abstract
      */
-    protected static $_config = null;
+    private static $_config = null;
 
     /**
      *
      * Enter description here ...
      * @var Wootook_Core_Config_Adapter_Abstract
      */
-    protected static $_globalConfig = null;
+    private static $_globalConfig = null;
 
     /**
      *
      * Enter description here ...
      * @var array
      */
-    protected static $_websiteConfigs = array();
+    private static $_websiteConfigs = array();
 
     /**
      *
      * Enter description here ...
      * @var array
      */
-    protected static $_gameConfigs = array();
+    private static $_gameConfigs = array();
+
+    /**
+     *
+     * Enter description here ...
+     * @var array
+     */
+    private static $_ignoreDatabaseConfig = false;
+
+    private static $_defaultWebsite = null;
+    private static $_defaultGame = null;
+
+    private static $_websitesById = array();
+    private static $_websitesByCode = array();
+    private static $_gamesById = array();
+    private static $_gamesByCode = array();
+
+    public static $isInstalled = true;
 
     /**
      * Registers an event listener to be called later in the application.
@@ -200,9 +217,11 @@ class Wootook
 
     public static function getLocale()
     {
-        $availableLocales = self::$_config->getConfig('global/locales');
-
-        return self::getPreferredLocale($availableLocales);
+        $availableLocales = self::getWebsiteConfig('locales');
+        if ($availableLocales !== null) {
+            return self::getPreferredLocale($availableLocales->toArray());
+        }
+        return self::getPreferredLocale();
     }
 
     public static function setDefaultLocale($locale)
@@ -310,36 +329,64 @@ class Wootook
 
     public static function loadConfig($filename = null)
     {
-        if ($filename === null) {
-            $filename = ROOT_PATH . DIRECTORY_SEPARATOR . 'config.php';
-        }
-
-        self::$_config = new Wootook_Core_Config_Adapter_Array($filename);
-
-        self::$_globalConfig = clone self::$_config['default'];
-        self::$_globalConfig->merge(self::$_config['global']);
-
-        self::_appendDatabaseConfig(self::$_globalConfig);
-
         self::$_websiteConfigs = array();
         self::$_gameConfigs = array();
+
+        self::$_config = new Wootook_Core_Config_Adapter_Array();
+        try {
+            self::$_config->load(APPLICATION_PATH . 'config' . DIRECTORY_SEPARATOR . 'system.php');
+
+            if ($filename === null) {
+                $filename = APPLICATION_PATH . 'config' . DIRECTORY_SEPARATOR . 'local.php';
+            }
+
+            if (is_string($filename)) {
+                if (!self::$isInstalled) {
+                    throw new Wootook_Core_Exception_DataAccessException();
+                }
+                $localConfig = new Wootook_Core_Config_Adapter_Array($filename);
+                self::$_config->merge($localConfig);
+            } else if (is_array($filename)) {
+                $localConfig = new Wootook_Core_Config_Node($filename);
+                self::$_config->merge($localConfig);
+            } else if ($filename instanceof Wootook_Core_Config_Node) {
+                self::$_config->merge($filename);
+            } else {
+                throw new Wootook_Core_Exception_DataAccessException();
+            }
+        } catch (Wootook_Core_Exception_DataAccessException $e) {
+            self::$_globalConfig = new Wootook_Core_Config_Node(array(), self::$_config);
+            self::$_ignoreDatabaseConfig = true;
+            return self::$_config;
+        }
+
+        self::$_globalConfig = clone self::$_config['default'];
+        if (isset(self::$_config['global'])) {
+            self::$_globalConfig->merge(self::$_config['global']);
+        }
+
+        self::_appendDatabaseConfig(self::$_globalConfig);
 
         return self::$_config;
     }
 
-    protected static function _appendDatabaseConfig(Wootook_Core_Config_Node $config, $type = 'global', $id = 0)
+    private static function _appendDatabaseConfig(Wootook_Core_Config_Node $config, $type = 'global', $model = null)
     {
+        if (self::$_ignoreDatabaseConfig) {
+            return $config;
+        }
+
         $collection = new Wootook_Core_Collection('core_config', 'Wootook_Core_Model_Config');
 
         switch ($type) {
         case 'website':
             $collection->where('website_id = :website_id');
-            $collection->load(array('website_id' => $id));
+            $collection->load(array('website_id' => $model->getId()));
             break;
 
         case 'game':
             $collection->where('game_id = :game_id');
-            $collection->load(array('game_id' => $id));
+            $collection->load(array('game_id' => $model->getId()));
             break;
 
         default:
@@ -356,51 +403,217 @@ class Wootook
         return $config;
     }
 
-    protected static function _initWebsiteConfig($websiteId)
+    public static function getWebsite($websiteId)
     {
-        if (self::$_config === null) {
-            self::loadConfig();
-        }
+        if (is_numeric($websiteId)) {
+            if (isset(self::$_websitesById[$websiteId])) {
+                return self::$_websitesById[$websiteId];
+            }
+            $website = new Wootook_Core_Model_Website();
+            try {
+                $website->load($websiteId);
+                $websiteCode = $website->getData('code');
 
-        $websiteId = 1;
-
-        if (!isset(self::$_websiteConfigs[$websiteId])) {
-            self::$_websiteConfigs[$websiteId] = clone self::$_globalConfig;
-
-            $websiteConfig = self::$_config->getConfig("website/{$websiteId}");
-            if ($websiteConfig !== null) {
-                self::$_websiteConfigs[$websiteId]->merge($websiteConfig);
+                self::$_websitesById[$websiteId] = $website;
+                self::$_websitesByCode[$websiteCode] = $website;
+            } catch (Wootook_Core_Exception_DataAccessException $e) {
+                throw new Wootook_Core_Exception_WebsiteError('Could not load website entity.', null, $e);
             }
 
-            self::_appendDatabaseConfig(self::$_websiteConfigs[$websiteId], 'website', $websiteId);
-        }
+            return $website;
+        } else {
+            if (isset(self::$_websitesByCode[$websiteId])) {
+                return self::$_websitesByCode[$websiteId];
+            }
+            $website = new Wootook_Core_Model_Website();
+            try {
+                $website->load($websiteId, 'code');
+                $websiteId = $website->getId();
+                $websiteCode = $website->getData('code');
 
-        return self::$_websiteConfigs[$websiteId];
+                self::$_websitesById[$websiteId] = $website;
+                self::$_websitesByCode[$websiteCode] = $website;
+            } catch (Wootook_Core_Exception_DataAccessException $e) {
+                throw new Wootook_Core_Exception_WebsiteError('Could not load website entity.', null, $e);
+            }
+
+            return $website;
+        }
     }
 
-    protected static function _initGameConfig($gameId)
+    public static function getGame($gameId)
+    {
+        if (is_numeric($gameId)) {
+            if (isset(self::$_gamesById[$gameId])) {
+                return self::$_gamesById[$gameId];
+            }
+            $game = new Wootook_Core_Model_Game();
+            try {
+                $game->load($gameId);
+                $gameCode = $game->getData('code');
+
+                self::$_gamesById[$gameId] = $game;
+                self::$_gamesByCode[$gameCode] = $game;
+            } catch (Wootook_Core_Exception_DataAccessException $e) {
+                throw new Wootook_Core_Exception_GameError('Could not load game entity.', null, $e);
+            }
+
+            return $game;
+        } else {
+            if (isset(self::$_gamesByCode[$gameId])) {
+                return self::$_gamesByCode[$gameId];
+            }
+            $game = new Wootook_Core_Model_Game();
+            try {
+                $game->load($gameId, 'code');
+                $gameId = $game->getId();
+                $gameCode = $game->getData('code');
+
+                self::$_gamesById[$gameId] = $game;
+                self::$_gamesByCode[$gameCode] = $game;
+            } catch (Wootook_Core_Exception_DataAccessException $e) {
+                throw new Wootook_Core_Exception_GameError('Could not load game entity.', null, $e);
+            }
+
+            return $game;
+        }
+    }
+
+    public static function addWebsite(Wootook_Core_Model_Website $website)
+    {
+        $websiteId = $website->getId();
+        $websiteKey = $website->getData('code');
+        self::$_websitesById[$websiteId] = $website;
+        self::$_websitesByCode[$websiteKey] = $website;
+    }
+
+    public static function addGame(Wootook_Core_Model_Game $game)
+    {
+        $gameId = $game->getId();
+        $gameKey = $game->getData('code');
+        self::$_gamesById[$gameId] = $game;
+        self::$_gamesByCode[$gameKey] = $game;
+    }
+
+    public static function setDefaultWebsite(Wootook_Core_Model_Website $website)
+    {
+        self::$_defaultWebsite = $website;
+    }
+
+    public static function getDefaultWebsite()
+    {
+        if (self::$_defaultWebsite === null) {
+            self::$_defaultWebsite = new Wootook_Core_Model_Website();
+            self::$_defaultWebsite->setId(1)->setData('code', Wootook_Core_Model_Website::DEFAULT_CODE);
+        }
+        return self::$_defaultWebsite;
+    }
+
+    public static function getDefaultGame()
+    {
+        if (self::$_defaultGame === null) {
+            self::$_defaultGame = new Wootook_Core_Model_Game();
+            self::$_defaultGame->setId(1)->setData('code', Wootook_Core_Model_Game::DEFAULT_CODE);
+        }
+        return self::$_defaultGame;
+    }
+
+    public static function setDefaultGame(Wootook_Core_Model_Game $game)
+    {
+        self::$_defaultGame = $game;
+    }
+
+    private static function _initWebsiteConfig($websiteId)
     {
         if (self::$_config === null) {
             self::loadConfig();
         }
-
-        $websiteId = 1;
-        $gameId = 1;
-
-        if (!isset(self::$_gameConfigs[$gameId])) {
-            self::_initWebsiteConfig($websiteId);
-
-            self::$_gameConfigs[$gameId] = clone self::$_websiteConfigs[$websiteId];
-
-            $gameConfig = self::$_config->getConfig("game/{$gameId}");
-            if ($gameConfig !== null) {
-                self::$_gameConfigs[$gameId]->merge($gameConfig);
+        if (!self::$isInstalled) {
+            if (isset(self::$_config['default'])) {
+                self::$_websiteConfigs[Wootook_Core_Model_Website::DEFAULT_CODE] = clone self::$_config['default'];
+            } else {
+                self::$_websiteConfigs[Wootook_Core_Model_Website::DEFAULT_CODE] = new Wootook_Core_Config_Node(array(), self::$_config);
+            }
+            if (isset(self::$_config['install'])) {
+                self::$_websiteConfigs[Wootook_Core_Model_Website::DEFAULT_CODE]->merge(self::$_config['install']);
             }
 
-            self::_appendDatabaseConfig(self::$_gameConfigs[$gameId], 'game', $gameId);
+            return self::$_websiteConfigs[Wootook_Core_Model_Website::DEFAULT_CODE];
         }
 
-        return self::$_gameConfigs[$gameId];
+        try {
+            $website = self::getWebsite($websiteId);
+        } catch (Wootook_Core_Exception_RuntimeException $e) {
+            Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
+            return null;
+        }
+        $websiteKey = $website->getData('code');
+        $websiteId = $website->getId();
+
+        if (!isset(self::$_websiteConfigs[$websiteKey])) {
+            self::$_websiteConfigs[$websiteKey] = clone self::$_config['default'];
+            if ($websiteId != 0 && isset(self::$_config['frontend'])) {
+                self::$_websiteConfigs[$websiteKey]->merge(self::$_config['frontend']);
+            } else if ($websiteId == 0 && isset(self::$_config['backend'])) {
+                self::$_websiteConfigs[$websiteKey]->merge(self::$_config['backend']);
+            }
+
+            $websiteConfig = self::$_config->getConfig("website/{$websiteKey}");
+            if ($websiteConfig !== null) {
+                self::$_websiteConfigs[$websiteKey]->merge($websiteConfig);
+            }
+
+            self::_appendDatabaseConfig(self::$_websiteConfigs[$websiteKey], 'website', $website);
+        }
+
+        return self::$_websiteConfigs[$websiteKey];
+    }
+
+    private static function _initGameConfig($gameId)
+    {
+        if (self::$_config === null) {
+            self::loadConfig();
+        }
+        if (!self::$isInstalled) {
+            if (isset(self::$_config['default'])) {
+                self::$_gameConfigs[Wootook_Core_Model_Game::DEFAULT_CODE] = clone self::$_config['default'];
+            } else {
+                self::$_gameConfigs[Wootook_Core_Model_Game::DEFAULT_CODE] = new Wootook_Core_Config_Node(array(), self::$_config);
+            }
+            if (isset(self::$_config['install'])) {
+                self::$_gameConfigs[Wootook_Core_Model_Game::DEFAULT_CODE]->merge(self::$_config['install']);
+            }
+
+            return self::$_gameConfigs[Wootook_Core_Model_Game::DEFAULT_CODE];
+        }
+
+        try {
+            $game = self::getGame($gameId);
+        } catch (Wootook_Core_Exception_RuntimeException $e) {
+            Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
+            return null;
+        }
+
+        $gameKey = $game->getData('code');
+        $gameId = $game->getId();
+        $websiteId = $game->getData('website_id');
+
+        if (!isset(self::$_gameConfigs[$gameKey])) {
+            $websiteConfig =  self::_initWebsiteConfig($websiteId);
+            if ($websiteConfig === null) {
+                return null;
+            }
+            self::$_gameConfigs[$gameKey] = clone $websiteConfig;
+
+            $gameConfig = self::$_config->getConfig("game/{$gameKey}");
+            if ($gameConfig !== null) {
+                self::$_gameConfigs[$gameKey]->merge($gameConfig);
+            }
+
+            self::_appendDatabaseConfig(self::$_gameConfigs[$gameKey], 'game', $game);
+        }
+
+        return self::$_gameConfigs[$gameKey];
     }
 
     public static function getConfig($path = null)
@@ -415,36 +628,48 @@ class Wootook
         return self::$_globalConfig;
     }
 
-    public static function getWebsiteConfig($path = null, $websiteId = null)
+    public static function getWebsiteConfig($path = null, $websiteKey = null)
     {
         if (self::$_config === null) {
             self::loadConfig();
         }
 
-        $websiteId = 1;
+        if ($websiteKey === null) {
+            //$websiteKey = Wootook_Core_Model_Website::DEFAULT_CODE;
+            $websiteKey = self::getDefaultWebsite()->getData('code');
+        }
 
-        self::_initWebsiteConfig($websiteId);
+        $config = self::_initWebsiteConfig($websiteKey);
+        if ($config === null) {
+            return null;
+        }
 
         if ($path !== null) {
-            return self::$_websiteConfigs[$websiteId]->getConfig($path);
+            return $config->getConfig($path);
         }
-        return self::$_websiteConfigs[$websiteId];
+        return $config;
     }
 
-    public static function getGameConfig($path = null, $gameId = null)
+    public static function getGameConfig($path = null, $gameKey = null)
     {
         if (self::$_config === null) {
             self::loadConfig();
         }
 
-        $gameId = 1;
+        if ($gameKey === null) {
+            //$gameKey = Wootook_Core_Model_Game::DEFAULT_CODE;
+            $gameKey = self::getDefaultGame()->getData('code');
+        }
 
-        self::_initGameConfig($gameId);
+        $config = self::_initGameConfig($gameKey);
+        if ($config === null) {
+            return null;
+        }
 
         if ($path !== null) {
-            return self::$_gameConfigs[$gameId]->getConfig($path);
+            return $config->getConfig($path);
         }
-        return self::$_gameConfigs[$gameId];
+        return $config;
     }
 
     public static function setConfig($path, $value, $websiteId = null, $gameId = null)
@@ -453,12 +678,23 @@ class Wootook
             self::loadConfig();
         }
 
-        $updater = new Wootook_Core_Model_Config();
-        $updater->setPath($path)->setValue($value);
-        if ($websiteId !== null) {
-            $updater->setWebsiteId($websiteId);
+        if (!self::$_ignoreDatabaseConfig) {
+            $updater = new Wootook_Core_Model_Config();
+            $updater->setPath($path)->setValue($value);
+            if ($websiteId !== null) {
+                $updater->setWebsiteId($websiteId);
+                if ($gameId !== null) {
+                    $updater->setGameId($gameId);
+                    self::$_gameConfigs[$gameId]->setConfig($path, $value);
+                } else {
+                    self::$_websiteConfigs[$websiteId]->setConfig($path, $value);
+                }
+            } else {
+                self::$_globalConfig->setConfig($path, $value);
+            }
+            $updater->save();
+        } else if ($websiteId !== null) {
             if ($gameId !== null) {
-                $updater->setGameId($gameId);
                 self::$_gameConfigs[$gameId]->setConfig($path, $value);
             } else {
                 self::$_websiteConfigs[$websiteId]->setConfig($path, $value);
@@ -466,19 +702,32 @@ class Wootook
         } else {
             self::$_globalConfig->setConfig($path, $value);
         }
-        $updater->save();
 
         return true;
     }
 
-    public static function getBaseUrl()
+    public static function getBaseUrl($domain = 'base')
     {
-        return self::$_config->getConfig('global/web/base_url');
+        $urlConfig = self::getGameConfig('web/url');
+        if (!$urlConfig instanceof Wootook_Core_Config_Node) {
+            return null;
+        }
+        if (!is_string($domain) || !isset($urlConfig->$domain)) {
+            return $urlConfig->base;
+        }
+        return $urlConfig->$domain;
     }
 
-    public static function getSkinUrl($package, $theme, $uri, Array $params = array())
+    public static function getBasePath($domain = 'base')
     {
-        return self::getUrl("skin/{$package}/{$theme}/{$uri}", $params);
+        $pathConfig = self::getGameConfig('system/path');
+        if (!$pathConfig instanceof Wootook_Core_Config_Node) {
+            return null;
+        }
+        if (!is_string($domain) || !isset($pathConfig->$domain)) {
+            return $pathConfig->base;
+        }
+        return $pathConfig->$domain;
     }
 
     public static function getUrl($uri, Array $params = array())
@@ -504,13 +753,13 @@ class Wootook
             return false;
         }
 
-        Wootook_Core_ErrorProfiler::sleep();
+        Wootook_Core_ErrorProfiler::getSingleton()->sleep();
         if (($fp = @fopen($path, 'r', true)) === false) {
-            Wootook_Core_ErrorProfiler::wakeup();
+            Wootook_Core_ErrorProfiler::getSingleton()->wakeup();
             return false;
         }
         fclose($fp);
-        Wootook_Core_ErrorProfiler::wakeup();
+        Wootook_Core_ErrorProfiler::getSingleton()->wakeup();
         return true;
     }
 }

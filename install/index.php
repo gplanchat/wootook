@@ -28,31 +28,76 @@
  *
  */
 
-define('INSIDE' , true);
-define('INSTALL', false);
-define('IN_INSTALL', true);
-
 define('STEP_SYSTEM',   1);
 define('STEP_DATABASE', 2);
 define('STEP_UNIVERSE', 3);
 define('STEP_PROFILE',  4);
 define('STEP_CONFIG',   5);
 
-require_once dirname(dirname(__FILE__)) . '/application/bootstrap.php';
+if (!defined('DEBUG') && ($env = getenv('DEBUG')) !== false && in_array(strtolower($env), array('1', 'on', 'true'))) {
+    define('DEBUG', true);
+} else if (!defined('DEBUG') && isset($_SERVER['DEBUG']) && in_array(strtolower($_SERVER['DEBUG']), array('1', 'on', 'true'))) {
+    define('DEBUG', true);
+}
+
+if (!defined('DEPRECATION') && ($env = getenv('DEPRECATION')) !== false && in_array(strtolower($env), array('1', 'on', 'true'))) {
+    define('DEPRECATION', true);
+} else if (!defined('DEPRECATION') && isset($_SERVER['DEPRECATION']) && in_array(strtolower($_SERVER['DEPRECATION']), array('1', 'on', 'true'))) {
+    define('DEPRECATION', true);
+}
+
+if (!defined('BCNUMBERS') && ($env = getenv('BCNUMBERS')) !== false && in_array(strtolower($env), array('1', 'on', 'true'))) {
+    define('BCNUMBERS', true);
+} else if (!defined('BCNUMBERS') && isset($_SERVER['BCNUMBERS']) && in_array(strtolower($_SERVER['BCNUMBERS']), array('1', 'on', 'true'))) {
+    define('BCNUMBERS', true);
+}
+
+if (!defined('DEBUG')) {
+    @ini_set('display_errors', false);
+} else {
+    @ini_set('display_errors', true);
+    @error_reporting(E_ALL | E_STRICT);
+}
+
+defined('ROOT_PATH') || define('ROOT_PATH', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR);
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', ROOT_PATH . 'application' . DIRECTORY_SEPARATOR);
+
+defined('PHPEXT') || define('PHPEXT', 'php');
+
+defined('VERSION') || define('VERSION', '1.5.0-beta2');
+
+set_include_path(implode(PATH_SEPARATOR, array(
+    APPLICATION_PATH . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . 'libraries',
+    APPLICATION_PATH . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . 'local',
+    APPLICATION_PATH . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . 'community',
+    APPLICATION_PATH . DIRECTORY_SEPARATOR . 'code' . DIRECTORY_SEPARATOR . 'core',
+    get_include_path()
+    )));
+
+function __autoload($class) {
+    include_once str_replace('_', '/', $class) . '.php';
+}
+
+Wootook::$isInstalled = false;
+/*
+$website = new Wootook_Core_Model_Website();
+$website->setId(1)->setData('code', Wootook_Core_Model_Website::DEFAULT_CODE);
+Wootook::setWebsite(1, $website);
+
+$game = new Wootook_Core_Model_Game();
+$game->setId(1)->setData('website_id', $website->getId())->setData('code', Wootook_Core_Model_Game::DEFAULT_CODE);
+Wootook::setGame(1, $game);
+*/
+include ROOT_PATH . 'includes' . DIRECTORY_SEPARATOR . 'constants.php';
+
+Wootook_Core_Time::init();
+Wootook_Core_ErrorProfiler::register();
+Wootook_Core_Model_Config_Events::registerEvents();
 
 $mode     = isset($_GET['mode']) ? strval($_GET['mode']) : 'intro';
 $step     = isset($_GET['step']) ? intval($_GET['step']) : 1;
 $prevStep = $step - 1;
 $nextStep = $step + 1;
-
-$modules = array(
-    'Wootook_Core',
-    'Wootook_Empire',
-    'Legacies_Empire',
-    'Legacies_Officers'
-    );
-
-includeLang('install/install');
 
 $baseUrl = (isset($_SERVER["HTTPS"]) && strtolower($_SERVER["HTTPS"]) == "on" ? 'https://' : 'http://')
     . $_SERVER["SERVER_NAME"] . ($_SERVER["SERVER_PORT"] != "80" ? ":{$_SERVER["SERVER_PORT"]}" : '');
@@ -63,18 +108,54 @@ if (isset($_SERVER['REQUEST_URI'])) {
         $baseUrl .= dirname(dirname($_SERVER['REQUEST_URI'])) . '/';
     }
 }
-
-Wootook::setConfig('global/web/base_url', $baseUrl);
-
-Wootook::setConfig('global/package', 'install');
-Wootook::setConfig('global/theme', 'default');
-Wootook::setconfig('global/layout', array(
-    'page' => 'page.php',
-    'install' => 'install.php'
-    ));
-
 $session = Wootook::getSession('install');
-$layout = new Wootook_Core_Layout();
+
+$website = new Wootook_Core_Model_Website();
+$website->setId(0)->setData('code', Wootook_Core_Model_Website::DEFAULT_CODE);
+Wootook::setDefaultWebsite($website);
+
+$game = new Wootook_Core_Model_Game();
+$game->setId(0)->setData('code', Wootook_Core_Model_Game::DEFAULT_CODE);
+Wootook::setDefaultGame($game);
+
+$configRewrites = array(
+    'default' => array(
+        'web' => array(
+            'url' => array(
+                'base' => $baseUrl,
+                'skin' => $baseUrl . 'skin/',
+                'js' => $baseUrl . 'js/',
+                'css' => $baseUrl . 'css/'
+                )
+            ),
+        'system' => array(
+            'path' => array(
+                'base' => ROOT_PATH,
+                'skin' => ROOT_PATH . 'skin' . DIRECTORY_SEPARATOR,
+                )
+            ),
+        'package' => 'default',
+        'theme' => 'default',
+        'layout' => array(
+            'page' => 'page.xml',
+            'install' => 'install.php'
+            ),
+        'storyline' => array(
+            'universe' => 'legacies',
+            'episode'  => 'default',
+            )
+        )
+    );
+
+$config = unserialize($session->getData('config'));
+if (is_array($config)) {
+    Wootook::loadConfig(array_merge_recursive($config, $configRewrites));
+} else {
+    Wootook::loadConfig($configRewrites);
+}
+
+$layout = new Wootook_Core_Layout('install');
+
 $request = new Wootook_Core_Controller_Request_Http();
 $response = new Wootook_Core_Controller_Response_Http();
 
@@ -111,22 +192,46 @@ case 'install':
                 exit(0);
             }
 
+            $urlPath = $request->getPost('url_path');
+
             $config = array(
                 'global' => array(
-                    'storyline' => array(
-                        'universe' => 'legacies',
-                        'episode'  => 'default',
-                        ),
+                    'resource' => array()
+                    ),
+                'frontend' => array(
                     'web' => array(
-                        'base_url' => $request->getPost('url_path')
+                        'url' => array(
+                            'base' => $request->getPost('url_path'),
+                            'skin' => $request->getPost('url_path') . 'skin/',
+                            'js'   => $request->getPost('url_path') . 'js/',
+                            'css'  => $request->getPost('url_path') . 'css/',
+                            )
                         ),
-                    'date' => array(
-                        'timezone' => $request->getPost('timezone')
+                    'system' => array(
+                        'path' => array(
+                            'base' => ROOT_PATH,
+                            'skin' => ROOT_PATH . 'skin' . DIRECTORY_SEPARATOR,
+                            ),
+                        'date' => array(
+                            'timezone' => $request->getPost('timezone')
+                            )
                         ),
-                    'layout' => array(
-                        'page'   => 'page.php',
-                        'admin'  => 'admin.php',
-                        'empire' => 'empire.php'
+                    'engine' => array(
+                        'storyline' => array(
+                            'universe' => 'legacies',
+                            'episode'  => 'default',
+                            ),
+                        'core' => array(
+                            'use_large_numbers' => true
+                            ),
+                        'universe' => array(
+                            'galaxies'  => 3,
+                            'systems'   => 100,
+                            'positions' => 15
+                            ),
+                        'combat' => array(
+                            'allow_spy_drone_attacks' => true
+                            )
                         ),
                     'locales' => array(
                         'fr'    => 'fr_FR',
@@ -134,7 +239,7 @@ case 'install':
                         'en'    => 'en_US',
                         'en_US' => 'en_US'
                         )
-                    ),
+                    )
                 );
             $session->setData('config', serialize($config));
 
@@ -211,7 +316,7 @@ case 'install':
             }
 
             $config = unserialize($session->getData('config'));
-            $config['global']['database'] = array(
+            $config['global']['resource']['database'] = array(
                 'default' => array(
                     'engine' => 'mysql',
                     'options' => array(
@@ -284,10 +389,18 @@ case 'install':
                         )
                     ),
                 );
-            Wootook::writeConfig($config);
+            $session->setData('config', serialize($config));
+            $writer = new Wootook_Core_Config_Adapter_Array();
+            $writer->setData($config);
+            $writer->save(APPLICATION_PATH . 'config' . DIRECTORY_SEPARATOR . 'local.php');
+
+            Wootook::loadConfig(array_merge_recursive($writer->toArray(), $configRewrites));
+
+            $galaxyCount = Wootook::getConfig('engine/universe/galaxies');
+            $systemCount = Wootook::getConfig('engine/universe/systems');
 
             $gameplays = include dirname(__FILE__) . DIRECTORY_SEPARATOR . 'gameplays.php';
-            $gameplayKey = $config['global']['storyline']['universe'];
+            $gameplayKey = Wootook::getConfig('storyline/universe');
             if (!isset($gameplays[$gameplayKey])) {
                 $gameplayKey = key($gameplays);
             }
@@ -313,28 +426,18 @@ case 'install':
                     }
                 } catch (Wootook_Core_Setup_Exception_VersionStageError $e) {
                     Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
-
-                    $session->addError($e->getMessage());
-                    $session->setData('step', STEP_UNIVERSE);
-                    $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
-                    $response->sendHeaders();
                     continue;
                 } catch (Wootook_Core_Setup_Exception_VersionValueError $e) {
                     Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
-
-                    $session->addError($e->getMessage());
-                    $session->setData('step', STEP_UNIVERSE);
-                    $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
-                    $response->sendHeaders();
                     continue;
                 } catch (Wootook_Core_Setup_Exception_RuntimeException $e) {
+                    $session->addError($e->getMessage());
                     Wootook_Core_ErrorProfiler::getSingleton()->exceptionManager($e);
 
-                    $session->addError($e->getMessage());
-                    $session->setData('step', STEP_UNIVERSE);
                     $response->setRedirect(Wootook::getUrl('install/index.php', array('mode' => 'install', 'step' => STEP_UNIVERSE)));
                     $response->sendHeaders();
-                    continue;
+                    exit(0);
+                    break;
                 }
             }
             $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . 'gamedata'  . DIRECTORY_SEPARATOR
@@ -407,6 +510,8 @@ case 'install':
                 Wootook_Empire_Model_User::setLoggedIn($user);
 
                 $user->setData('authlevel', LEVEL_ADMIN)->save();
+
+                $user->getHomePlanet()->setName(Wootook::__('Planet'))->save();
             }
 
             $session->setData('step', STEP_CONFIG);

@@ -40,6 +40,11 @@ class Wootook_Core_Config_Node
         return $this;
     }
 
+    public function getParent()
+    {
+        return $this->_parent;
+    }
+
     public function setConfig($path, $value)
     {
         $explodedPath = explode('/', $path);
@@ -47,21 +52,22 @@ class Wootook_Core_Config_Node
         $length = count($explodedPath);
         $currentNode = $this;
         for ($i = 0; $i < $length; $i++) {
-            if (!$currentNode->offsetExists($explodedPath[$i])) {
-                $newNode = new Wootook_Core_Config_Node(array(), $currentNode);
-                $currentNode->offsetSet($explodedPath[$i], $newNode);
+            if ($i < ($length - 1)) {
+                if (!$currentNode->offsetExists($explodedPath[$i])) {
+                    $newNode = new Wootook_Core_Config_Node(array(), $currentNode);
+                    $currentNode->offsetSet($explodedPath[$i], $newNode);
+                }
+            } else if (is_array($value)) {
+                $currentNode->offsetSet($explodedPath[$i], new self($value, $this));
+                break;
+            } else {
+                $currentNode->offsetSet($explodedPath[$i], $value);
+                break;
             }
 
             $currentNode = $currentNode->offsetGet($explodedPath[$i]);
 
-            if ($i >= ($length - 1)) {
-                if (is_array($value)) {
-                    $currentNode->offsetSet($explodedPath[$i], new self($value, $this));
-                } else {
-                    $currentNode->offsetSet($explodedPath[$i], $value);
-                }
-                break;
-            } else if (!$currentNode instanceof Wootook_Core_Config_Node) {
+            if (!$currentNode instanceof Wootook_Core_Config_Node) {
                 throw new Wootook_Core_Exception_RuntimeException();
             }
         }
@@ -130,6 +136,9 @@ class Wootook_Core_Config_Node
 
     private function _resolveAttributeName($key)
     {
+        if (is_numeric($key)) {
+            return $key;
+        }
         if (!isset(self::$_attributeNameCache[$key])) {
             self::$_attributeNameCache[$key] = str_replace(' ', '-', strtolower(preg_replace('#[A-Z]#', ' \\1', $key)));
         }
@@ -182,7 +191,11 @@ class Wootook_Core_Config_Node
 
     public function offsetSet($offset, $value)
     {
-        $this->_children[$offset] = $value;
+        if ($offset === null) {
+             $this->_children[] = $value;
+        } else {
+            $this->_children[$offset] = $value;
+        }
 
         return $value;
     }

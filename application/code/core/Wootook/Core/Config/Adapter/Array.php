@@ -12,11 +12,13 @@ class Wootook_Core_Config_Adapter_Array
 
     public function load($filename)
     {
+        if (!file_exists($filename)) {
+            throw new Wootook_Core_Exception_DataAccessException(sprintf('Could not load config file "%s"', $filename));
+        }
         $data = include $filename;
 
         if (!is_array($data)) {
-            throw new Wootook_Core_Exception_DataAccessException(
-                Wootook::__('Configuration file could not be loaded.'));
+            throw new Wootook_Core_Exception_DataAccessException('Configuration file could not be loaded.');
         }
 
         $this->_init($data);
